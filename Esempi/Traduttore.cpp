@@ -14,6 +14,8 @@
 #include <native/parallel_execution_native.h>
 #include <omp/parallel_execution_omp.h>
 
+// g++ Traduttore.cpp -lpthread -I/home/lorenzo/Desktop/Lorenzo/lib/grppi/include -fcilkplus
+
 //#include <execution>
 
 using namespace std;
@@ -98,7 +100,7 @@ int main(int argc, char * argv[]) {
     ranges[i].end   = (i != (nw-1) ? (i+1)*delta : m);
 
   }
-w
+
   auto thread_body = [&](int a, int b, string t) {
     for(int i=a; i<b; i++)
       t[i] = traduttore(t[i]);
@@ -139,7 +141,7 @@ w
   start = std::chrono::system_clock::now();
   auto thr = grppi::parallel_execution_native{nw};
   auto omp = grppi::parallel_execution_omp{};
-  omp.set_concurrency_degree(nw);
+  //omp.set_concurrency_degree(nw);
   auto seq = grppi::sequential_execution{};
 
   grppi::map(seq,

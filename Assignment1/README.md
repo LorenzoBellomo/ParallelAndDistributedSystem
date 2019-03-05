@@ -1,4 +1,4 @@
-TEXT OF THE ASSIGNMENT
+# TEXT OF THE ASSIGNMENT
 
 Implement a 5 stage pipeline in C++ using the standard C++ concurrency mechanisms (shared memory target architecture). The stages should behave as follows:
 - stage one outputs a stream of m integers (m from command line parameters)

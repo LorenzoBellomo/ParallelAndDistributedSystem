@@ -25,6 +25,19 @@ void stage2(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *ne
             next_stage->push(nullopt);
         }
     }
+    /*
+    while(!eos) {
+        optional<int> elem = prev_stage->pop();
+        if(elem.has_value()) {
+            int a = elem.value();
+            this_thread::sleep_for(std::chrono::milliseconds(10));
+            next_stage->push(++elem);
+        } else {
+            eos = true;
+            next_stage->push(nullopt);
+        }
+    }
+    */
 }
 
 void stage3(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *next_stage) {
@@ -39,6 +52,20 @@ void stage3(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *ne
             next_stage->push(nullopt);
         }
     }
+
+    /*
+    while(!eos) {
+        optional<int> elem = prev_stage->pop();
+        if(elem.has_value()) {
+            int a = elem.value();
+            this_thread::sleep_for(std::chrono::milliseconds(10));
+            next_stage->push(++elem);
+        } else {
+            eos = true;
+            next_stage->push(nullopt);
+        }
+    }
+    */
 }
 
 void stage4(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *next_stage) {
@@ -53,6 +80,20 @@ void stage4(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *ne
             next_stage->push(nullopt);
         }
     }
+
+    /*
+    while(!eos) {
+        optional<int> elem = prev_stage->pop();
+        if(elem.has_value()) {
+            int a = elem.value();
+            this_thread::sleep_for(std::chrono::milliseconds(10));
+            next_stage->push(++elem);
+        } else {
+            eos = true;
+            next_stage->push(nullopt);
+        }
+    }
+    */
 }
 
 void stage5(safe_queue<optional<int>> *prev_stage) {
@@ -65,6 +106,17 @@ void stage5(safe_queue<optional<int>> *prev_stage) {
             eos = true;
         }
     }
+
+    /*
+    while(!eos) {
+        optional<int> elem = prev_stage->pop();
+        if(elem.has_value()) {
+            int a = elem.value();
+            cout << elem << endl;
+        } else 
+            eos = true;
+    }
+    */
 }
 
 int main(int argc, char* argv[]) {

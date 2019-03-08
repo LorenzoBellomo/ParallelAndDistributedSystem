@@ -1,3 +1,3 @@
 CXX = g++
-CXXFLAGS = std=c++17
-LDFLAGS = pthread
+CXXFLAGS = -std=c++17
+LDFLAGS = -pthread

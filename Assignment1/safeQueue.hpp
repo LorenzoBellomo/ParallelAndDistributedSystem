@@ -4,6 +4,9 @@
 #include <deque>
 #include <thread>
 
+#ifndef SAFE_QUEUE
+#define SAFE_QUEUE
+
 template <typename T>
 class safe_queue
 {
@@ -13,7 +16,7 @@ private:
   std::deque<T>           d_queue;
 public:
 
-  sample_queue() {}
+  safe_queue() {}
   
   void push(T const& value) {
     {
@@ -36,3 +39,5 @@ public:
     return(d_queue.empty());
   }
 };
+
+#endif

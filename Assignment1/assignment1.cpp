@@ -2,6 +2,7 @@
 #include <vector>
 #include <thread>
 #include <optional>
+#include <chrono>
 #include "safeQueue.hpp"
 
 
@@ -15,111 +16,72 @@ void stage1(int m, safe_queue<optional<int>> *next_stage) {
 
 void stage2(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *next_stage) {
     bool eos = false;
-    while(!eos) {
-        try {
-            int elem = prev_stage->pop().value();
-            this_thread::sleep_for(std::chrono::milliseconds(10));
-            next_stage->push(++elem);
-        } catch (const bad_optional_access e) {
-            eos = true;
-            next_stage->push(nullopt);
-        }
-    }
-    /*
+    
     while(!eos) {
         optional<int> elem = prev_stage->pop();
         if(elem.has_value()) {
             int a = elem.value();
             this_thread::sleep_for(std::chrono::milliseconds(10));
-            next_stage->push(++elem);
+            next_stage->push(++a);
         } else {
             eos = true;
             next_stage->push(nullopt);
         }
     }
-    */
+    
 }
 
 void stage3(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *next_stage) {
     bool eos = false;
-    while(!eos) {
-        try {
-            int elem = prev_stage->pop().value();
-            this_thread::sleep_for(std::chrono::milliseconds(10));
-            next_stage->push(elem*elem);
-        } catch (const bad_optional_access e) {
-            eos = true;
-            next_stage->push(nullopt);
-        }
-    }
-
-    /*
+    
     while(!eos) {
         optional<int> elem = prev_stage->pop();
         if(elem.has_value()) {
             int a = elem.value();
             this_thread::sleep_for(std::chrono::milliseconds(10));
-            next_stage->push(++elem);
+            next_stage->push(a*a);
         } else {
             eos = true;
             next_stage->push(nullopt);
         }
     }
-    */
+    
 }
 
 void stage4(safe_queue<optional<int>> *prev_stage, safe_queue<optional<int>> *next_stage) {
     bool eos = false;
-    while(!eos) {
-        try {
-            int elem = prev_stage->pop().value();
-            this_thread::sleep_for(std::chrono::milliseconds(10));
-            next_stage->push(--elem);
-        } catch (const bad_optional_access e) {
-            eos = true;
-            next_stage->push(nullopt);
-        }
-    }
-
-    /*
+    
     while(!eos) {
         optional<int> elem = prev_stage->pop();
         if(elem.has_value()) {
             int a = elem.value();
             this_thread::sleep_for(std::chrono::milliseconds(10));
-            next_stage->push(++elem);
+            next_stage->push(--a);
         } else {
             eos = true;
             next_stage->push(nullopt);
         }
     }
-    */
+    
 }
 
 void stage5(safe_queue<optional<int>> *prev_stage) {
     bool eos = false;
-    while(!eos) {
-        try {
-            int elem = prev_stage->pop().value();
-            cout << elem << endl;
-        } catch (const bad_optional_access e) {
-            eos = true;
-        }
-    }
-
-    /*
+    
     while(!eos) {
         optional<int> elem = prev_stage->pop();
         if(elem.has_value()) {
             int a = elem.value();
-            cout << elem << endl;
+            cout << a << endl;
         } else 
             eos = true;
     }
-    */
+    
 }
 
 int main(int argc, char* argv[]) {
+
+    chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
     if (argc != 2) {
         cout << "ERROR: usage: ./a.out m";
@@ -138,6 +100,13 @@ int main(int argc, char* argv[]) {
 
     for(thread& t: threads)
         t.join();
+
+    chrono::system_clock::time_point end = std::chrono::system_clock::now();
+    int elapsed = chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    int best_time = m * 10;
+    cout << "elapsed time: " << elapsed << endl;
+    cout << "best possible time is " << best_time << endl;
+    cout << "difference is " << elapsed - best_time << endl;
 
     return 0;
 }

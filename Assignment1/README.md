@@ -14,3 +14,6 @@ Goal 2: measure the overhead needed to set up and complete the parallel computat
 Optional: verify what happens (performance, core usage):
 - in case thread allocation is left to the operating system
 - in case you stick each thread to a particular core.
+
+To read core where the current thread is running consider using sched_getcpu().
+To stick a thread to a core (context) use pthread_setaffinity_np(...)

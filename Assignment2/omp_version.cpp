@@ -2,8 +2,7 @@
 #include <vector>
 #include <time.h>
 #include <stdio.h>
-#include <algorithm>
-#include <thread>
+#include <omp.h>
 
 #include "utimer.cpp"
 
@@ -36,14 +35,10 @@ int count_primes(int n) {
     return count;
 }
 
-void func(vector<int>::iterator begin, vector<int>::iterator end, vector<int>::iterator output) {
-    transform(begin, end, output, count_primes);
-}
-
 int main(int argc, char *argv[]){
 
     if (argc != 3) {
-        cout << "ERROR: usage: ./assignment2 num_tasks nw" << endl;
+        cout << "ERROR: usage: ./omp_version num_tasks nw" << endl;
         return -1;
     }
 
@@ -54,24 +49,16 @@ int main(int argc, char *argv[]){
 
     for(int i = 0; i < num_tasks; i++) 
         in.push_back(rand() % 10000 + 1);
-    
+
     out = vector<int> (num_tasks);
-    int range = num_tasks / nw;
 
     {
-        utimer timer("posix threads version");
+        utimer timer("openmp version");
         
-        for(int i = 0; i < nw; i++) {
-            threads.push_back(thread(
-                func, 
-                in.begin() + (i * range),
-                in.begin() + (i + 1) * range,
-                out.begin() + (i * range)
-                ));
+    #pragma omp parallel for num_threads(nw)
+        for(int i = 0; i < num_tasks; i++) {
+            out[i] = count_primes(in[i]);
         }
-
-        for(thread& t: threads)
-            t.join();
 
     }
 

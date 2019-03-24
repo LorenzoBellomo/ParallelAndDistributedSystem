@@ -2,12 +2,14 @@
 #include <vector>
 #include <time.h>
 #include <stdio.h>
-#include <algorithm>
-#include <thread>
+#include <optional>
+
 
 #include "utimer.cpp"
+#include <grppi.h>
 
 using namespace std;
+using namespace grppi;
 
 vector<int> in;
 vector<int> out;
@@ -36,14 +38,15 @@ int count_primes(int n) {
     return count;
 }
 
-void func(vector<int>::iterator begin, vector<int>::iterator end, vector<int>::iterator output) {
-    transform(begin, end, output, count_primes);
+int func(int n) {
+    out[i] = count_primes(in[i]);
+    return i;
 }
 
 int main(int argc, char *argv[]){
 
     if (argc != 3) {
-        cout << "ERROR: usage: ./assignment2 num_tasks nw" << endl;
+        cout << "ERROR: usage: ./omp_version num_tasks nw" << endl;
         return -1;
     }
 
@@ -54,26 +57,27 @@ int main(int argc, char *argv[]){
 
     for(int i = 0; i < num_tasks; i++) 
         in.push_back(rand() % 10000 + 1);
-    
+
     out = vector<int> (num_tasks);
-    int range = num_tasks / nw;
+
+    auto generator = [num_tasks] () -> optional<int> {
+        static int i = 0;
+        if(i < num_tasks)
+	        return(i++);
+        else
+	        return {};
+    };
+    auto merger = [] (int i) {};
 
     {
-        utimer timer("posix threads version");
+        utimer timer("grppi version");
         
-        for(int i = 0; i < nw; i++) {
-            threads.push_back(thread(
-                func, 
-                in.begin() + (i * range),
-                in.begin() + (i + 1) * range,
-                out.begin() + (i * range)
-                ));
-        }
-
-        for(thread& t: threads)
-            t.join();
+        dynamic_execution thr = grppi::parallel_execution_native{};
+        pipeline(thr, generator, farm(nw, func), merger);
 
     }
+
+    print_vector(out)
 
     return 0;
 }

@@ -2,7 +2,7 @@
 #include <vector>
 #include <time.h>
 #include <stdio.h>
-#include <optional>
+#include <experimental/optional>
 
 
 #include "utimer.cpp"
@@ -38,7 +38,7 @@ int count_primes(int n) {
     return count;
 }
 
-int func(int n) {
+int func(int i) {
     out[i] = count_primes(in[i]);
     return i;
 }
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]){
 
     out = vector<int> (num_tasks);
 
-    auto generator = [num_tasks] () -> optional<int> {
+    auto generator = [num_tasks] () -> experimental::optional<int> {
         static int i = 0;
         if(i < num_tasks)
 	        return(i++);
@@ -76,8 +76,6 @@ int main(int argc, char *argv[]){
         pipeline(thr, generator, farm(nw, func), merger);
 
     }
-
-    print_vector(out)
 
     return 0;
 }

@@ -57,17 +57,31 @@ int main(int argc, char *argv[]){
     
     out = vector<int> (num_tasks);
     int range = num_tasks / nw;
+    int extra = num_tasks % nw;
 
     {
         utimer timer("posix threads version");
-        
-        for(int i = 0; i < nw; i++) {
+
+        int prev = 0;
+
+        for(int i = 0; i < extra; i++) {
             threads.push_back(thread(
                 func, 
-                in.begin() + (i * range),
-                in.begin() + (i + 1) * range,
-                out.begin() + (i * range)
+                in.begin() + prev,
+                in.begin() + prev + range + 1,
+                out.begin() + prev
                 ));
+            prev += (range + 1);
+        }
+        
+        for(int i = 0; i < nw - extra; i++) {            
+            threads.push_back(thread(
+                func, 
+                in.begin() + prev,
+                in.begin() + prev + range,
+                out.begin() + prev
+            ));
+            prev += range;
         }
 
         for(thread& t: threads)

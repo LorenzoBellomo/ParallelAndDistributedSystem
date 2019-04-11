@@ -1,0 +1,3 @@
+# Second assignment (bis)
+
+implement two versions of the prime number application of the second assignment using FastFLow. The first version should use a farm, with the emitter generating the input stream and the collector storing the result pairs (input task, number of primes in the interval). The second version should use parallel for instead, assuming the input tasks are already stored in a vector.

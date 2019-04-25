@@ -1,8 +1,4 @@
 *.out
 *vscode
-Assignment1/assignment1
-Assignment2/assignment2
-Assignment2/omp_version
-Assignment2/grppi_version
-Assignment2bis/assignment2bis
 *.zip
+/CImg-2.5.7

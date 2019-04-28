@@ -1,4 +1,4 @@
 *.out
-*vscode
+.vscode
 *.zip
-/CImg-2.5.7
+CImg-2.5.7

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <string>
 #include <algorithm>
 #include <functional>
 
@@ -9,8 +8,8 @@
 
 using namespace std;
 
-pair<int, string> my_map(string s) {
-    return pair(1, s);
+pair<int, int> my_map(int e) {
+    return pair(1, e);
 }
 
 int my_reduce(int a, int b) {
@@ -20,23 +19,28 @@ int my_reduce(int a, int b) {
 
 int main(int argc, char *argv[]) {
 
-    if(argc != 1 && argc != 2) {
-		cout << "Usage is: mapReduce (opt:seed)" << endl;
+    if(argc != 2 && argc != 3) {
+		cout << "Usage is: mapReduce n (opt:seed)" << endl;
 		return(0);
 	}
 
-    {
-        utimer timer("sequential version");
+    int seed;
+    if(argc == 3)
+        seed = atoi(argv[2]);
+    else
+        seed = time(NULL);
+    int n = atoi(argv[1]);
+    vector<int> elem;
+    vector<pair<int, int>> mapped;
+    vector<pair<int, int>> reduced;
+    srand(seed);
 
-        int seed;
-        if(argc == 2)
-            seed = atoi(argv[1]);
-        else
-            seed = time(NULL);
-        vector<string> elem;
-        vector<pair<int, string>> mapped;
-        srand(seed);
-        mapReduce<string, int, string> mr(my_map, my_reduce);
+    for(int i = 0; i < n; i++)
+        elem.push_back(rand() % 11 + 1);
+
+    {    
+        utimer timer("sequential version");
+        mapReduce<int, int, int> mr(my_map, my_reduce);
     
         for(auto i : elem) {
             mapped.push_back(mr.map_function(i));
@@ -45,12 +49,25 @@ int main(int argc, char *argv[]) {
         sort(   
             mapped.begin(), 
             mapped.end(), 
-            [] (pair<int, string> p1, pair<int, string> p2) {
+            [] (pair<int, int> p1, pair<int, int> p2) {
                     return p1.second < p2.second;
             }
         );
-        for(auto i : mapped)
-            cout << i.first << " " << i.second << ", ";
+
+        auto prev = *(mapped.begin());
+        for(auto ptr = mapped.begin() + 1; ptr < mapped.end(); ptr++) {
+            pair<int, int> e = *ptr;
+            if(e.second == prev.second)
+                prev = pair(mr.reduce_function(prev.first, e.first), e.second);
+            else {
+                reduced.push_back(prev);
+                prev = e;
+            }
+        }
+
+        
+        for(auto i : reduced)
+            cout << "<" << i.first << ", " << i.second << "> ";
     }
 
 }

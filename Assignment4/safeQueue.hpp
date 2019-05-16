@@ -38,6 +38,15 @@ public:
     std::unique_lock<std::mutex> lock(this->d_mutex);
     return(d_queue.empty());
   }
+
+  T try_pop() {
+    std::unique_lock<std::mutex> lock(this->d_mutex);
+    if(this->d_queue.empty())
+      return NULL;
+    T rc(std::move(this->d_queue.back()));
+    this->d_queue.pop_back();
+    return rc;
+  }
 };
 
 #endif

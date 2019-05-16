@@ -4,23 +4,23 @@
 
 #include <safeQueue.hpp>
 
-#ifndef WORKER
-#define WORKER
+#ifndef MAP_WORKER
+#define MAP_WORKER
 using namespace std;
 
-template <typename Tin, typename Tout>
+template <typename Tin, typename Tout, typename Tkey>
 class map_worker {
 private:
-    function<Tout(Tin)> func;
+    function<pair<Tout, Tkey>(Tin)> func;
     safe_queue<optional<Tin>> *input_queue;
-    vector<safe_queue<optional<Tout>>> output_queues;
+    vector<safe_queue<optional<pair<Tout, Tkey>>>> output_queues;
 
 public:
-    worker(function<Tout(Tin)> f, vector<safe_queue<optional<Tout>>> qu): func(f), output_queues(qu) {
+    map_worker(function<pair<Tout, Tkey>>(Tin)> f, vector<safe_queue<optional<pair<Tout, Tkey>>>> qu): func(f), output_queues(qu) {
         input_queue = new safe_queue<optional<Tin>>();
     }
 
-    ~worker() {
+    ~map_worker() {
         delete(input_queue);
     }
 
@@ -30,7 +30,7 @@ public:
         while(!eos) {
             optional<Tin> elem = input_queue->pop();
             if(elem.has_value()) {
-                Tout res = func(elem.value());
+                pair<Tout, Tkey> res = func(elem.value());
                 int idx = hash(res) / output_queues.size();
                 output_queue[idx]s->push(res);
             } else {

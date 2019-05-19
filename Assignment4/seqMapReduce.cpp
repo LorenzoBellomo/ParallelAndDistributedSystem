@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
         
         for(auto i : reduced)
             cout << "<" << i.first << ", " << i.second << "> ";
+        cout << endl;
     }
 
 }

@@ -13,10 +13,11 @@ using namespace std;
 int nw_map, nw_reduce;
 vector<thread> thd;
 vector<int> elem;
-vector<worker> workers;
+vector<map_worker<int, int, int>> map_workers;
+vector<reduce_worker<int, int>> reduce_workers;
 thread emitter_thd;
 thread collector_thd;
-vector<optional<safe_queue<pair<int, int>>>> queues;
+vector<unique_ptr<safe_queue<optional<pair<int, int>>>>> queues;
 vector<pair<int,int>> result;
 
 pair<int, int> my_map(int e) {
@@ -30,20 +31,21 @@ int my_reduce(int a, int b) {
 void emitter() {
     int i = 0;
     for(auto ptr = elem.begin(); ptr < elem.end(); ptr++) {
-        workers[i].give_task(*ptr);
+        map_workers[i].give_task(*ptr);
         i = (i + 1) % nw_map;
     }
-    for(int j = 0; j < nw; j++)
-        workers[i].end_stream();
+    for(int j = 0; j < nw_map; j++)
+        map_workers[i].end_stream();
 }
 
 void collector() {
 
     int eos = 0;
-    while(eos < queues.size()) {
-        for(int i = nw_map; i < nw_reduce; i++) {
-            optional<pair<int, int>> e = queues[i].try_pull();
-            if(e != NULL) {
+    while(eos < reduce_workers.size()) {
+        for(auto& wk : reduce_workers) {
+            auto e = wk.try_pull();
+            if(e.has_value()) {
+                auto elem = e.value();
                 if(elem.has_value()) 
                     result.push_back(elem.value());
                 else
@@ -78,28 +80,27 @@ int main(int argc, char *argv[]) {
     {
         utimer timer("Posix parallel version");
 
-        collector_thd = thread(collector);
-        emitter_thd = thread(emitter);
-
-        for(int i = 0; i < nw_reduce; i++)
-            queues.push_back(safe_queue());
-
+        for(int i = 0; i < nw_reduce; i++) {
+            queues.push_back(make_unique<safe_queue<optional<pair<int, int>>>>());
+        }
         for(int i = 0; i < nw_map; i++) {
-            map_worker<int, pair<int, int>> work(my_map, queues);
-            thd.push_back(thread(&map_worker<int, pair<int, int>>::execute_loop, work));
-            workers.push_back(work);
+            map_worker<int, int, int> work(my_map, &queues);
+            map_workers.push_back(work);
         }
         for(int i = 0; i < nw_reduce; i++) {
-            reduce_worker<int, int> work(my_reduce, queues);
-            thd.push_back(thread(&reduce_worker<int, int>::execute_loop, work));
-            workers.push_back(work);
+            reduce_worker<int, int> work(my_reduce, &queues);
+            reduce_workers.push_back(work);
         }
+        
+        thd.push_back(thread(emitter));
+        for(auto& w : map_workers) 
+            thd.push_back(thread(&map_worker<int, int, int>::execute_loop, &w));
+        for(auto& w : reduce_workers) 
+            thd.push_back(thread(&reduce_worker<int, int>::execute_loop, &w));
+        thd.push_back(thread(collector));
 
         for(thread& t : thd)
             t.join();
-
-        emitter_thd.join();
-        collector_thd.join();
 
     }
 

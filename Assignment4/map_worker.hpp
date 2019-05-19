@@ -13,15 +13,12 @@ class map_worker {
 private:
     function<pair<Tout, Tkey>(Tin)> func;
     safe_queue<optional<Tin>> *input_queue;
-    vector<safe_queue<optional<pair<Tout, Tkey>>>> output_queues;
+    vector<unique_ptr<safe_queue<optional<pair<Tout, Tkey>>>>> *output_queues;
+    hash<Tkey> my_hash;
 
 public:
-    map_worker(function<pair<Tout, Tkey>>(Tin)> f, vector<safe_queue<optional<pair<Tout, Tkey>>>> qu): func(f), output_queues(qu) {
+    map_worker(function<pair<Tout, Tkey>(Tin)> f, vector<unique_ptr<safe_queue<optional<pair<Tout, Tkey>>>>> *qu): func(f), output_queues(qu) {
         input_queue = new safe_queue<optional<Tin>>();
-    }
-
-    ~map_worker() {
-        delete(input_queue);
     }
 
     void execute_loop() {
@@ -31,11 +28,11 @@ public:
             optional<Tin> elem = input_queue->pop();
             if(elem.has_value()) {
                 pair<Tout, Tkey> res = func(elem.value());
-                int idx = hash(res) / output_queues.size();
-                output_queue[idx]s->push(res);
+                int idx = my_hash(res.second) % (*output_queues).size();
+                (*output_queues)[idx]->push(res);
             } else {
                 eos = true;
-                for(auto q : output_queues)
+                for(auto& q : *output_queues)
                     q->push(nullopt);
             }
         }

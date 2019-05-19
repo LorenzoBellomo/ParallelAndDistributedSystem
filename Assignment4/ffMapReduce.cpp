@@ -35,7 +35,7 @@ struct Map_Worker: ff_monode_t<Task_Map, pair<int,int>> {
         for(auto ptr = task.b; ptr < task.e; ptr++) {
             size_t idx = my_hash(*ptr) % nw_reduce;
             pair<int, int> next_task = my_map(*ptr);
-            this->ff_send_out_to(&next_task, idx);
+            this->ff_send_out_to(new pair<int, int>(next_task.first, next_task.second), idx);
         }
         return EOS;
     }
@@ -59,7 +59,6 @@ struct Reduce_Worker: ff_minode_t<pair<int,int>, void> {
 
     void eosnotify(ssize_t) {
 	    ended++;
-        if(ended == nw_map) ff_send_out(EOS);
     }
 
     void svc_end() {
@@ -89,7 +88,6 @@ int main(int argc, char *argv[]) {
     srand(seed);
 
     vector<int> elem;
-    vector<pair<int,int>> result;
 
     for(int i = 0; i < n; i++)
         elem.push_back(rand() % 11 + 1);
@@ -125,9 +123,5 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-
-    /*for(auto e : result)
-        cout << "<" << e.first << "," << e.second << "> ";
-    cout << endl;*/
 
 }

@@ -16,16 +16,17 @@ private:
     vector<unique_ptr<safe_queue<optional<pair<Tout, Tkey>>>>> *input_queues;
     safe_queue<optional<pair<Tout, Tkey>>> *output_queue;
     map<Tkey, Tout> partial_results;
+    int nw_map;
 
 public:
-    reduce_worker(function<Tout(Tout, Tout)> f, vector<unique_ptr<safe_queue<optional<pair<Tout, Tkey>>>>> *qu): func(f), input_queues(qu), partial_results() {
+    reduce_worker(function<Tout(Tout, Tout)> f, vector<unique_ptr<safe_queue<optional<pair<Tout, Tkey>>>>> *qu, int n_map): func(f), input_queues(qu), partial_results(), nw_map(n_map) {
         output_queue = new safe_queue<optional<pair<Tout, Tkey>>>();
     }
 
     void execute_loop() {
 
         int eos = 0;
-        while(eos <= (*input_queues).size()) {
+        while(eos < nw_map) {
             for(auto& q : *input_queues) {
                 auto elem = q->try_pop();
                 if(elem.first) {
@@ -34,9 +35,9 @@ public:
                         auto x = e.value();
                         auto prev = partial_results[x.second];
                         partial_results.insert_or_assign(x.second, prev + x.first);
-                    } else {
+                    } else 
                         eos++;
-                    }
+                    
                 }
             }
         }

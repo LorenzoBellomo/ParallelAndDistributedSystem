@@ -36,12 +36,13 @@ void emitter() {
     }
     for(auto& w : map_workers)
         w.end_stream();
+
 }
 
 void collector() {
 
     int eos = 0;
-    while(eos <= reduce_workers.size()) {
+    while(eos < reduce_workers.size()) {
         for(auto& wk : reduce_workers) {
             auto e = wk.try_pull();
             if(e.first) {
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
             map_workers.push_back(work);
         }
         for(int i = 0; i < nw_reduce; i++) {
-            reduce_worker<int, int> work(my_reduce, &queues);
+            reduce_worker<int, int> work(my_reduce, &queues, nw_map);
             reduce_workers.push_back(work);
         }
         

@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -I . -I /usr/local/lib/fastflow -Wfatal-errors #-O3
+CXXFLAGS = -std=c++17 -I . -I /usr/local/lib/fastflow #-O3
 LDFLAGS = -pthread
 
 %: %.cpp

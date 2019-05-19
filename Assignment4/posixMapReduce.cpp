@@ -30,12 +30,13 @@ int my_reduce(int a, int b) {
 
 void emitter() {
     int i = 0;
-    for(auto ptr = elem.begin(); ptr < elem.end(); ptr++) {
-        map_workers[i].give_task(*ptr);
+    for(auto& e : elem) {
+        map_workers[i].give_task(e);
         i = (i + 1) % nw_map;
     }
-    for(int j = 0; j < nw_map; j++)
-        map_workers[i].end_stream();
+    for(auto& w : map_workers)
+        w.end_stream();
+    cout << "emitter end" << endl;
 }
 
 void collector() {
@@ -53,6 +54,7 @@ void collector() {
             }
         }
     }
+    cout << "collector end" << endl;
     
 }
 

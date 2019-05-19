@@ -41,6 +41,7 @@ public:
             output_queue->push(elem);
         }
         output_queue->push(nullopt);
+        cout << "reduce end" << endl;
     }
 
     optional<optional<pair<Tout, Tkey>>> try_pull() {

@@ -36,6 +36,7 @@ public:
                     q->push(nullopt);
             }
         }
+        cout << "map end" << endl;
     }
 
     void give_task(Tin task) {

@@ -36,7 +36,6 @@ void emitter() {
     }
     for(auto& w : map_workers)
         w.end_stream();
-
 }
 
 void collector() {
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
             map_workers.push_back(work);
         }
         for(int i = 0; i < nw_reduce; i++) {
-            reduce_worker<int, int> work(my_reduce, &queues, nw_map);
+            reduce_worker<int, int> work(my_reduce, &queues, nw_map, i);
             reduce_workers.push_back(work);
         }
         
@@ -97,7 +96,7 @@ int main(int argc, char *argv[]) {
         for(auto& w : map_workers) 
             thd.push_back(thread(&map_worker<int, int, int>::execute_loop, &w));
         for(auto& w : reduce_workers) 
-            thd.push_back(thread(&reduce_worker<int, int>::execute_loop, &w));
+            thd.push_back(thread(&reduce_worker<int, int>::execute_loop, &w));       
         thd.push_back(thread(collector));
 
         for(thread& t : thd)

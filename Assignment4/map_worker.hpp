@@ -32,7 +32,7 @@ public:
                 (*output_queues)[idx]->push(res);
             } else {
                 eos = true;
-                for(auto& q : *output_queues)
+                for(auto& q : *output_queues) 
                     q->push(nullopt);
             }
         }

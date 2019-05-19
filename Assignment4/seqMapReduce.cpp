@@ -4,7 +4,6 @@
 #include <functional>
 
 #include <utimer.cpp>
-#include <mapReduce.hpp>
 
 using namespace std;
 
@@ -40,10 +39,9 @@ int main(int argc, char *argv[]) {
 
     {    
         utimer timer("sequential version");
-        mapReduce<int, int, int> mr(my_map, my_reduce);
     
         for(auto i : elem) {
-            mapped.push_back(mr.map_function(i));
+            mapped.push_back(my_map(i));
         }
 
         sort(   
@@ -58,7 +56,7 @@ int main(int argc, char *argv[]) {
         for(auto ptr = mapped.begin() + 1; ptr <= mapped.end(); ptr++) {
             pair<int, int> e = *ptr;
             if(e.second == prev.second)
-                prev = pair(mr.reduce_function(prev.first, e.first), e.second);
+                prev = pair(my_reduce(prev.first, e.first), e.second);
             else {
                 reduced.push_back(prev);
                 prev = e;

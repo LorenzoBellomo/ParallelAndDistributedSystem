@@ -27,11 +27,14 @@ public:
         int eos = 0;
         while(eos < (*input_queues).size()) {
             for(auto& q : *input_queues) {
-                optional<pair<Tout, Tkey>> elem = q->pop();
+                auto elem = q->try_pop();
                 if(elem.has_value()) {
-                    auto x = elem.value();
-                    auto prev = partial_results[x.second];
-                    partial_results.insert_or_assign(x.second, prev + x.first);
+                    auto e = elem.value();
+                    if(e.has_value()) {
+                        auto x = e.value();
+                        auto prev = partial_results[x.second];
+                        partial_results.insert_or_assign(x.second, prev + x.first);
+                    }
                 } else {
                     eos++;
                 }
@@ -41,7 +44,6 @@ public:
             output_queue->push(elem);
         }
         output_queue->push(nullopt);
-        cout << "reduce end" << endl;
     }
 
     optional<optional<pair<Tout, Tkey>>> try_pull() {

@@ -36,7 +36,6 @@ void emitter() {
     }
     for(auto& w : map_workers)
         w.end_stream();
-    cout << "emitter end" << endl;
 }
 
 void collector() {
@@ -54,7 +53,6 @@ void collector() {
             }
         }
     }
-    cout << "collector end" << endl;
     
 }
 

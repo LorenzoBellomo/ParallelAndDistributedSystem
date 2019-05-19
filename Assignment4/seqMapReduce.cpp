@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         );
 
         auto prev = *(mapped.begin());
-        for(auto ptr = mapped.begin() + 1; ptr < mapped.end(); ptr++) {
+        for(auto ptr = mapped.begin() + 1; ptr <= mapped.end(); ptr++) {
             pair<int, int> e = *ptr;
             if(e.second == prev.second)
                 prev = pair(mr.reduce_function(prev.first, e.first), e.second);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
         
         for(auto i : reduced)
-            cout << "<" << i.first << ", " << i.second << "> ";
+            cout << "<" << i.second << "," << i.first << "> ";
         cout << endl;
     }
 

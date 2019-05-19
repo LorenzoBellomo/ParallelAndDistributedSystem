@@ -28,7 +28,7 @@ public:
             optional<Tin> elem = input_queue->pop();
             if(elem.has_value()) {
                 pair<Tout, Tkey> res = func(elem.value());
-                int idx = my_hash(res.second) % (*output_queues).size();
+                size_t idx = my_hash(res.second) % (*output_queues).size();
                 (*output_queues)[idx]->push(res);
             } else {
                 eos = true;

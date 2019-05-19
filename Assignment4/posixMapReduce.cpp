@@ -41,11 +41,11 @@ void emitter() {
 void collector() {
 
     int eos = 0;
-    while(eos < reduce_workers.size()) {
+    while(eos <= reduce_workers.size()) {
         for(auto& wk : reduce_workers) {
             auto e = wk.try_pull();
-            if(e.has_value()) {
-                auto elem = e.value();
+            if(e.first) {
+                auto elem = e.second.value();
                 if(elem.has_value()) 
                     result.push_back(elem.value());
                 else

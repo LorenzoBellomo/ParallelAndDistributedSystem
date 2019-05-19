@@ -25,18 +25,18 @@ public:
     void execute_loop() {
 
         int eos = 0;
-        while(eos < (*input_queues).size()) {
+        while(eos <= (*input_queues).size()) {
             for(auto& q : *input_queues) {
                 auto elem = q->try_pop();
-                if(elem.has_value()) {
-                    auto e = elem.value();
+                if(elem.first) {
+                    auto e = elem.second.value();
                     if(e.has_value()) {
                         auto x = e.value();
                         auto prev = partial_results[x.second];
                         partial_results.insert_or_assign(x.second, prev + x.first);
+                    } else {
+                        eos++;
                     }
-                } else {
-                    eos++;
                 }
             }
         }
@@ -46,7 +46,7 @@ public:
         output_queue->push(nullopt);
     }
 
-    optional<optional<pair<Tout, Tkey>>> try_pull() {
+    pair<bool, optional<optional<pair<Tout, Tkey>>>> try_pull() {
         return output_queue->try_pop();
     }
     

@@ -40,13 +40,13 @@ public:
     return(d_queue.empty());
   }
 
-  std::optional<T> try_pop() {
+  std::pair<bool, std::optional<T>> try_pop() {
     std::unique_lock<std::mutex> lock(this->d_mutex);
     if(this->d_queue.empty())
-      return {};
+      return std::pair<bool, std::optional<T>>(false, {});
     T rc(std::move(this->d_queue.back()));
     this->d_queue.pop_back();
-    return rc;
+    return std::pair<bool, std::optional<T>>(true, rc);
   }
 };
 

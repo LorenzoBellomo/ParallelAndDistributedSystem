@@ -9,8 +9,7 @@
 #define SAFE_QUEUE
 
 template <typename T>
-class safe_queue
-{
+class safe_queue {
 private:
   std::mutex              d_mutex;
   std::condition_variable d_condition;

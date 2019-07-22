@@ -1,10 +1,11 @@
+
+#ifndef BARRIER
+#define BARRIER
+
 #include <iostream>
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-
-#ifndef BARRIER
-#define BARRIER
 
 using namespace std; 
 
@@ -16,7 +17,7 @@ private:
     int counter, nw;
 
 public:
-    barrier(int nw_barr): nw(nw_barr), counter(0) {}
+    barrier(int nw_barr): counter(0), nw(nw_barr){}
 
     void barrier_wait() {
         std::unique_lock<std::mutex> lock(this->d_mutex);
@@ -24,8 +25,8 @@ public:
         if(counter == nw)
             this->d_condition.notify_all();
         else 
-            this->d_condition.wait(lock, []{ return counter == nw; });
+            this->d_condition.wait(lock, [this]{ return counter == nw; });
     }
-}
+};
 
 #endif

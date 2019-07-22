@@ -1,25 +1,23 @@
+ 
+#ifndef BSP_INTERFACE
+#define BSP_INTERFACE
+
 #include <iostream> 
 #include <vector>
- 
-#ifndef BSP
-#define BSP
 
 using namespace std;
 
 template <typename T>
 class BSP {
 private:
-    int currentSS;
-    
-    
 public:
 
-    virtual void BSP::send_to(
-        vector<T>::iterator begin, 
-        vector<T>::iterator end,
-        int worker_index
-    ) = 0;
-
+    virtual void send_to(
+        typename vector<T>::iterator _begin, 
+        typename vector<T>::iterator _end,
+        int ss_lvl_index,
+        int worker_index) = 0;
+    
 };
 
 #endif

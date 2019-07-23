@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall
+CXXFLAGS = -std=c++17 -Wall -Wfatal-errors
 INCLUDES = -I . 
 OPTFLAGS = -O3
 LDFLAGS = -pthread

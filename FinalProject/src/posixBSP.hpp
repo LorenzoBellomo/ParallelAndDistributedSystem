@@ -16,29 +16,25 @@ class posixBSP {
 private:
     vector<super_step<T>> super_steps;
     int nw, current_ss;
-    typename vector<T>::iterator begin, end;
     
 public:
 
     posixBSP(
-        vector<function<void(void)>> ss, 
+        vector<super_step<T>> &ss, 
         int num_workers, 
-        typename vector<T>::iterator _begin,
-        typename vector<T>::iterator _end): 
-            nw(num_workers), current_ss(0), begin(_begin), end(_end) 
+        function<void(super_step<T> *)> init_logic): 
+            super_steps(ss), nw(num_workers), current_ss(0)
     {
-        super_steps = vector<super_step<T>>();
-        for(int i = 0; i < ss.size(); i++) 
-            super_steps.push_back(ss[i], this, nw, i);
-
+        init_logic(&super_steps[0]);
+        for(size_t i = 0; i < ss.size() - 1; i++)
+            super_steps[i].initialize(&super_steps[i+1], nw, i);
+        super_steps[ss.size()-1].initialize(nullptr, nw, ss.size()-1);
     }
 
     void start_and_wait() {
+        super_steps[0].join_barrier();
+        cout << "Ended ss 1" << endl;
 
-    }
-
-    super_step<T> *get_next_ss(int ss_idx) {
-        return (& super_steps[ss_idx]);
     }
 };
 

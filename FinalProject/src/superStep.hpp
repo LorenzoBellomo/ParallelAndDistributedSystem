@@ -5,49 +5,55 @@
 #include <iostream>
 #include <functional>
 #include <thread>
+#include <deque>
 
 #include <safeQueue.hpp>
 #include <barrier.hpp>
-//#include <posixBSP.hpp>
 
 using namespace std; 
 
 template <typename T>
 class super_step {
 private:
-    function<void(super_step<T> *, super_step<T> *)> ss_func;
-    //posixBSP<T> *bsp;
     vector<thread> thds;
     vector<safe_queue<T>> in_queues;
+    super_step<T> *next_ss;
     barrier barr;
     int nw, ss_lvl;
 
-    void worker(function<void(super_step *current_ss, super_step *next_ss)>) {
-
-        
+    void worker(int worker_idx) {
+        typename deque<T>::reverse_iterator begin, end;
+        in_queues[worker_idx].get_iterators(begin, end);
+        ss_func(begin, end, worker_idx, next_ss);
+        join_barrier();
+        cout << worker_idx << "out of barrier" << endl;
     }
 
 public:
-    super_step(
-        function<void(super_step<T> *, super_step<T> *)> func, 
-        //posixBSP<T> *_bsp, 
-        int _nw, 
-        int _ss_lvl): 
-            ss_func(func), nw(_nw), ss_lvl(_ss_lvl) //, bsp(_bsp)
+    super_step() {}
+
+    void initialize(super_step<T> *p, int num_w, int ss_level) {
+        next_ss = p;
+        nw = num_w;
+        ss_lvl = ss_level;
+        barr.set_target(nw);
+        in_queues.resize(nw);
+    }
+
+    void ss_func(
+        typename deque<T>::reverse_iterator begin, 
+        typename deque<T>::reverse_iterator end, 
+        int idx, 
+        super_step<T> *next_ss)
     {
-        barr = barrier();
-        in_queues = vector<safe_queue<T>>(nw);
+        cout << "default function" << endl;
     }
 
     void start_ss() {
-        for(int i = 0; i < nw; i++)
-            thds.push_back(thread(ss_func));
+        for(int i = 0; i < nw; i++) 
+            thds.push_back(thread(worker, i));
+        cout << "started threads" << endl;
     }
-
-    /*void end_ss() {
-        for(auto t : thds)
-            t.join();
-    }*/
 
     void offer_task(T task, int worker_index) {
         in_queues[worker_index].push(task);
@@ -63,14 +69,6 @@ public:
 
     void join_barrier() {
         barr.barrier_wait();
-    }
-
-    void get_my_queue_data(
-        const typename deque<T>::reverse_iterator &begin,
-        const typename deque<T>::reverse_iterator &end,
-        int worker_idx) 
-    {
-        in_queues[worker_idx].get_iterators(begin, end);
     }
 
 };

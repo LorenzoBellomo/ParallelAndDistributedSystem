@@ -7,11 +7,10 @@ LDFLAGS = -pthread
 TARGETS = sorter
 
 INCLUDE_FILES = superStep.hpp \
-		BSP.hpp \
 		posixBSP.hpp \
 		safeQueue.hpp \
-		superStep.hpp \
-		utimer.hpp 
+		utimer.hpp \
+		barrier.hpp
 	
 .PHONY: all clean cleanall debug
 

@@ -8,6 +8,7 @@
 #include <deque>
 #include <thread>
 #include <optional>
+#include <vector>
 
 template <typename T>
 class safe_queue {
@@ -28,12 +29,14 @@ public:
     }
 
     void push_multiple(
-        typename vector<T const&>::iterator begin,
-        typename vector<T const&>::iterator end) 
+        typename std::vector<T>::iterator begin,
+        typename std::vector<T>::iterator end) 
     {
         {
             std::unique_lock<std::mutex> lock(this->d_mutex);
-            d_queue.insert(deque.end(), begin, end);
+            //d_queue.insert(d_queue.begin(), begin, end);
+            for(auto p = begin; p < end; p++)
+                d_queue.push_front(*p);
         }
         this->d_condition.notify_one();
     }
@@ -58,6 +61,14 @@ public:
         T rc(std::move(this->d_queue.back()));
         this->d_queue.pop_back();
         return rc;
+    }
+
+    void get_iterators(
+        typename std::deque<T>::reverse_iterator& begin,
+        typename std::deque<T>::reverse_iterator& end)
+    {
+        begin = d_queue.rbegin();
+        end = d_queue.rend();
     }
 };
 

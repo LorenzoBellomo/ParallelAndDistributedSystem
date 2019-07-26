@@ -11,72 +11,50 @@
 
 using namespace std;
 
-struct ss1: super_step<long> {
+struct business_logic: logicBSP<long> {
 
-    void ss_func(
-        typename deque<long>::reverse_iterator begin, 
-        typename deque<long>::reverse_iterator end, 
-        int my_idx, 
-        shared_ptr<super_step<T>> next_ss)
+    business_logic() {}
+
+    void ss1(
+        logicBSP::ss_queue my_queue, 
+        int worker_idx, 
+        vector<logicBSP::ss_queue> next_queue)
     {
-        elements.insert(elements.begin(), input_begin, input_end);
-
-        sort(elements.begin(), elements.end());
-        vector<long> samples;
-        long range = elements.size() / (get_nw() + 1);
-        long extra = elements.size() % (get_nw() + 1);
-        long prev = 0;
-        for(int i = 0; i < extra; ++i) {
-            samples.push_back(*(elements.begin() + prev + 1));
-            prev += (range + 1);
-        }
-        for(int i = 0; i < nw - extra; ++i) {
-            samples.push_back(*(elements.begin() + prev));
-            prev += range;
-        }
-        for(int i = 0; i < get_nw(); i++)
-            next_ss->offer_tasks(samples.begin(), samples.end(), i)
+        
     }
 
-    void give_iterators(vector<long>::iterator begin, vector<long>::iterator end) {
-        input_begin = begin;
-        input_end = end;
-    }
-
-
-    vector<long> elements;
-    vector<long>::iterator input_begin, input_end;
-};
-
-struct ss2: super_step<long> {
-
-    void ss_func(
-        typename deque<long>::reverse_iterator begin, 
-        typename deque<long>::reverse_iterator end, 
-        int my_idx, 
-        shared_ptr<super_step<T>> next_ss)
+    void ss2(
+        logicBSP::ss_queue my_queue, 
+        int worker_idx, 
+        vector<logicBSP::ss_queue> next_queue)
     {
-        vector<long> elements(input_begin, input_end);
-        for(long i = begin; i < end; i++) {
-            tmp.push_back((*i)+1);
-        }
-        next_ss->offer_tasks(tmp.begin(), tmp.end(), 0);
+        
     }
 
-};
-
-struct ss3: super_step<long> {
-    void ss_func(
-        typename deque<long>::reverse_iterator begin, 
-        typename deque<long>::reverse_iterator end, 
-        int my_idx, 
-        shared_ptr<super_step<T>> next_ss)
+    void ss3(
+        logicBSP::ss_queue my_queue, 
+        int worker_idx, 
+        vector<logicBSP::ss_queue> next_queue)
     {
-        for(long i = begin; i < end; i++) {
-            cout << *i << " ";
-        }
-        cout << endl;
+        
     }
+
+    logicBSP::ss_function switcher(int idx) {
+        switch(idx) {
+            case 0: 
+                return ss1;
+            case 1: 
+                return ss2;
+            case 2: 
+                return ss3;
+        }
+        return nullptr;
+    }
+
+    int ss_count() {
+        return 3;
+    }
+
 };
 
 int main(int argc, char *argv[]) {
@@ -104,31 +82,6 @@ int main(int argc, char *argv[]) {
 
     {
         utimer timer("parallel version");
-
-        vector<shared_ptr<super_step<long>>> ss;
-        ss.push_back(shared_ptr<ss1>(new ss1()));
-        ss.push_back(shared_ptr<ss2>(new ss2()));
-        ss.push_back(shared_ptr<ss3>(new ss3()));
-
-        auto init_logic = [] () {
-            long range = in_tasks / nw;
-            long extra = in_tasks % nw;
-            long prev = 0;
-            for(int i = 0; i < extra; ++i) {
-                ss[0]->give_iterators
-                    (in_tasks.begin() + prev, in_tasks.begin() + prev + range + 1);
-                prev += (range + 1);
-            }
-            for(int i = 0; i < nw - extra; ++i) {
-                ss[0]->give_iterators
-                    (in_tasks.begin() + prev, in_tasks.begin() + prev + range);
-                prev += range;
-            }
-            
-        };
-
-        posixBSP<long> p(ss, 1, init_logic);
-        p.start_and_wait();
     }
 
     {

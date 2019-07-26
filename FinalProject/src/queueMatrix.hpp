@@ -24,6 +24,10 @@ public:
         return matrix[ss][wkr_idx];
     }
 
+    vector<ss_queue> get_ss_queues(int ss) {
+        return matrix[ss];
+    }
+
 };
 
 #endif

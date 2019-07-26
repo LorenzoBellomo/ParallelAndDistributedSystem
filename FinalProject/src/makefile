@@ -1,16 +1,17 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wfatal-errors
-INCLUDES = -I . 
+CXXFLAGS = -std=c++17 -Wall -Wfatal-errors 
+INCLUDES = -I . #-I /usr/local/lib/fastflow
 OPTFLAGS = -O3
 LDFLAGS = -pthread
 
 TARGETS = sorter
 
-INCLUDE_FILES = superStep.hpp \
+INCLUDE_FILES = logicBSP.hpp \
 		posixBSP.hpp \
 		safeQueue.hpp \
 		utimer.hpp \
-		barrier.hpp
+		barrier.hpp \
+		queueMatrix.hpp
 	
 .PHONY: all clean cleanall debug
 

@@ -6,7 +6,9 @@
 #include <vector>
 #include <functional>
 
-#include <superStep.hpp>
+#include <logicBSP.hpp>
+#include <barrier.hpp>
+#include <queueMatrix.hpp>
 
 using namespace std;
 
@@ -15,44 +17,31 @@ class posixBSP {
 
 private:
 
-    typedef vector<shared_ptr<super_step<T>>> ss_collection;
+    typedef shared_ptr<safe_queue<T>> ss_queue;
 
-    ss_collection super_steps;
-    int nw, current_ss;
+    logicBSP<T> *logic;
+    int nw, ss_count, current_ss;
     vector<thread> thds;
+    queue_matrix<T> matrix; // matrix[ss_num][nw]
+    barrier barr;
 
     void worker(int worker_idx) {
-        for(auto ss : super_steps) {
-            ss->execute_ss(worker_idx);
-            ss->join_barrier();
-        }
+        
     }
     
 public:
 
-    posixBSP(
-        ss_collection ss, 
-        int num_workers, 
-        function<void()> init_logic): 
-            nw(num_workers), current_ss(0)
+    posixBSP(logicBSP<T> *_logic, int num_w): logic(_logic), nw(num_w), 
+        ss_count(_logic->ss_count()), current_ss(0), 
+        matrix(_logic->ss_count(), nw) 
     {
-        super_steps = ss;
-        init_logic();
-        for(size_t i = 0; i < ss.size() - 1; i++)
-            super_steps[i]->initialize(super_steps[i+1], nw, i);
-        super_steps[ss.size()-1]->initialize(nullptr, nw, ss.size()-1);
+        auto q = matrix.get_queue(0, 0);
+        q->push(1);
+        cout << q->try_pop().value() << endl;;
     }
 
     void start_and_wait() {
-        for(int i = 0; i < nw; i++)
-            thds.push_back(thread(worker, i));
 
-        for(auto t : thds)
-            t.join();
-        cout << "Joined threads" << endl;
-
-        for(auto a : super_steps)
-            a.reset();
     }
 };
 

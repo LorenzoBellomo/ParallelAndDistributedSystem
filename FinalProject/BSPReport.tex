@@ -1,6 +1,13 @@
 \documentclass[]{article}
 
 \usepackage{nameref}
+\usepackage[a4paper,top=3cm,bottom=4cm,left=3.5cm,right=3.5cm]{geometry}
+\usepackage[font=footnotesize,labelfont={sf,bf}]{caption}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{lmodern}
+
+\graphicspath{ {./assets/latexImages/} }
 
 \title{SPM Project: BSP}
 \author{Lorenzo Bellomo, 531423}
@@ -11,7 +18,7 @@
 \maketitle
 
 \section{Introduction}
-In this report the \emph{Bulk Synchronous pattern} (BSP) will be analysed both from a theoretical viewpoint and from a practical one. \\
+In this report the \emph{Bulk Synchronous Pattern} (BSP) will be analysed both from a theoretical viewpoint and from a practical one. \\
 The outline of the report will be the following:
 \begin{itemize}
 	\item Section \ref{sec:parDesign} (\nameref{sec:parDesign})
@@ -22,9 +29,42 @@ The outline of the report will be the following:
 
 \section{Parallel Architecture Design}
 \label{sec:parDesign}
+BSP is by nature a parallel bridging model. The main idea is that the process is divided in three phases (as shown in figure \ref{fig:BSP}):
+\begin{itemize}
+	\item \emph{Local computation}: The processors act independently and compute their task on a different partition of the input data.
+	\item \emph{Communication}: In this phase processors are allowed to send data to the other ones. It is important to notice that phase 1 and 2 (super step and communication) may overlap in case of uneven input workload.
+	\item \emph{Synchronization}: In this phase all the processors synchronize and wait that the communication phase is over for each worker (\emph{barrier}).
+\end{itemize}
+This whole process made of 3 phases composes a \emph{super step}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\linewidth]{bsp}
+	\caption{BSP structure}
+	\label{fig:BSP}
+\end{figure}
+
 
 \section{Performance Modeling}
 \label{sec:perfModel}
+In order to theoretically model the performances of a BSP algorithm some values are going to be defined:
+\begin{itemize}
+	\item $\mathit{nw}$ is the number of workers (BSP processors).
+	\item $k$ is the number of super steps
+	\item $w_i$ is the time spent by the \emph{i-th} worker in the compute phase.
+	\item $m_i$ is the number of maximum messages receiver by the \emph{i-th} worker.
+	\item $c$ is the cost of sending or receiving one message.
+	\item $B$ is the cost of the synchronization step (\emph{barrier}).
+	\item $I$ is the initialization process cost.
+	\item $F$ is the finalization process cost
+\end{itemize}
+The cost of a super step ($\mathit{SS}$) can be approximated (upper bounded) as follows:
+$$ \mathit{SS}_j = \max_{i=1}^{\mathit{nw}} w_i + \max_{i=1}^{\mathit{nw}} c m_i + B $$
+Which eventually gives:
+$$ \mathit{tot\_cost} = I + \sum_{j=1}^{k} \mathit{SS}_j + F $$
+\subsection{Opportunities for parallelism}
+According to the model provided, the opportunities for parallelization reside in the \emph{super step cost}, which ideally should decrease linearly by increasing the number of parallel activities. In particular, it is safe to assume that $w_i = \Theta(n/\mathit{nw}) \, \forall i$, while instead both the communication cost and the barrier cost are pure overhead, which grows with $\mathit{nw}$. \\
+In this particular problem, the parallel design is already provided, but the goal of the implementation is to minimize the overheads, with particular focus on the \emph{communication} one, which can be assumed to be the most costly. \\
+For what regards the user provided business logic code, which regards both the computation phase and the communication one, the scalability of the provided \emph{BSP} depends on the goodness of the business logic code.
 
 \section{Implementation Structure and Details}
 \label{sec:implDetails}

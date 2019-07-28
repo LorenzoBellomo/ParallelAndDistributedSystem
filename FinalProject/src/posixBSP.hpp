@@ -18,7 +18,7 @@ class posixBSP {
 private:
 
     typedef shared_ptr<safe_queue<T>> ss_queue;
-    typedef void (* ss_function)(ss_queue my_queue, int worker_idx, vector<ss_queue> next);
+    typedef function<void(ss_queue, int, vector<ss_queue>)> ss_function;
 
     logicBSP<T> *logic;
     int nw, ss_count;
@@ -33,9 +33,9 @@ private:
         bool end = false;
 
         while(!end) {
-            ss_queue my_queue = queue_matrix.get_queue(current_ss, worker_idx);
+            ss_queue my_queue = matrix.get_queue(current_ss, worker_idx);
             vector<ss_queue> next_queues = (current_ss == ss_count-1)? 
-                    queue_matrix.get_ss_queues(current_ss) : nullptr;
+                    matrix.get_ss_queues(current_ss) : vector<ss_queue>();
                     
             ss_funct[current_ss](my_queue, worker_idx, next_queues);
             barr.barrier_wait();
@@ -49,8 +49,7 @@ private:
 public:
 
     posixBSP(logicBSP<T> *_logic, int num_w): logic(_logic), nw(num_w), 
-        ss_count(_logic->ss_count()), current_ss(0), 
-        matrix(_logic->ss_count(), nw) 
+        ss_count(_logic->ss_count()), matrix(_logic->ss_count(), nw), barr(nw) 
     {
         for(int i = 0; i < ss_count; i++)
             ss_funct.push_back(logic->switcher(i));
@@ -58,9 +57,9 @@ public:
 
     void start_and_wait() {
         for(int i = 0; i < nw; i++)
-            thds.push_back(thread(worker, i));
+            thds.push_back(thread(&posixBSP<T>::worker, this, i));
 
-        for(auto t : thds)
+        for(auto& t : thds)
             t.join();
     }
 };

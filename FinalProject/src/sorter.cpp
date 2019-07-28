@@ -7,20 +7,33 @@
 
 #include <utimer.hpp>
 #include <posixBSP.hpp>
-#include <superStep.hpp>
+#include <logicBSP.hpp>
 
 using namespace std;
 
-struct business_logic: logicBSP<long> {
+struct sorter_logic: logicBSP<long> {
 
-    business_logic() {}
+    sorter_logic(vector<long>::iterator begin, vector<long>::iterator end, int num_w): nw(num_w) {
+        auto range = (end - begin) / nw;
+        auto extra = (end - begin) % nw;
+        int prev = 0;
+        for(int i = 0; i < extra; ++i) {
+            input_iterators.push_back(begin + prev);
+            prev += (range + 1);
+        }
+        for(int i = 0; i < nw - extra; ++i) {
+            input_iterators.push_back(begin + prev);
+            prev += range;
+        }
+        input_iterators.push_back(end);
+    }
 
     void ss1(
         logicBSP::ss_queue my_queue, 
         int worker_idx, 
         vector<logicBSP::ss_queue> next_queue)
     {
-        
+        for(auto p = input_iterators[worker_idx]; p < input_iterators[worker_idx+1]; p++)
     }
 
     void ss2(
@@ -41,12 +54,22 @@ struct business_logic: logicBSP<long> {
 
     logicBSP::ss_function switcher(int idx) {
         switch(idx) {
+            using namespace std::placeholders;
             case 0: 
-                return ss1;
+                {
+                    auto f = bind(&sorter_logic::ss1, this, _1, _2, _3);
+                    return f;
+                }
             case 1: 
-                return ss2;
+                {
+                    auto f = bind(&sorter_logic::ss2, this, _1, _2, _3);
+                    return f;
+                }
             case 2: 
-                return ss3;
+                {
+                    auto f = bind(&sorter_logic::ss3, this, _1, _2, _3);
+                    return f;
+                }
         }
         return nullptr;
     }
@@ -54,6 +77,9 @@ struct business_logic: logicBSP<long> {
     int ss_count() {
         return 3;
     }
+
+    int nw;
+    vector<vector<long>::iterator> input_iterators;
 
 };
 
@@ -82,11 +108,15 @@ int main(int argc, char *argv[]) {
 
     {
         utimer timer("parallel version");
+        
+        sorter_logic logic(in_tasks.begin(), in_tasks.end(), nw);
+        posixBSP bsp(&logic, nw);
+        bsp.start_and_wait();
     }
 
     {
         utimer timer("std::sort");
-        sort(input.begin(), input.end());
+        sort(in_tasks.begin(), in_tasks.end());
     }
 
     return 0;

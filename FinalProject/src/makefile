@@ -18,14 +18,15 @@ INCLUDE_FILES = logicBSP.hpp \
 %: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@ $< $(LDFLAGS) 
 
-all:
-	make $(TARGETS)
-
 clean: 
 	rm -f $(TARGETS)
 
 cleanall:
 	make clean
+
+all:
+	make cleanall
+	make $(TARGETS)
 
 debug:
 	rm -f prova

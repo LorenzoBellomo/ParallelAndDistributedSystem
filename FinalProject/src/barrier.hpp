@@ -17,12 +17,7 @@ private:
     int counter, nw, iteration;
 
 public:
-    barrier(): counter(0), iteration(0) {}
-
-    void set_target(int num_w) {
-        nw = num_w;
-        counter = nw;
-    }
+    barrier(int num_w): counter(num_w), nw(num_w), iteration(0) {}
 
     void barrier_wait() {
         std::unique_lock<std::mutex> lock(this->d_mutex);

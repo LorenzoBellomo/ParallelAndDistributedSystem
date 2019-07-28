@@ -6,34 +6,40 @@
 #include <deque>
 
 #include <utimer.hpp>
-#include <posixBSP.hpp>
 #include <logicBSP.hpp>
+#include <posixBSP.hpp>
 
 using namespace std;
 
-struct sorter_logic: logicBSP<long> {
+struct sorter_worker: logicBSP<long> {
 
-    sorter_logic(vector<long>::iterator begin, vector<long>::iterator end, int num_w): nw(num_w) {
-        auto range = (end - begin) / nw;
-        auto extra = (end - begin) % nw;
-        int prev = 0;
-        for(int i = 0; i < extra; ++i) {
-            input_iterators.push_back(begin + prev);
-            prev += (range + 1);
-        }
-        for(int i = 0; i < nw - extra; ++i) {
-            input_iterators.push_back(begin + prev);
-            prev += range;
-        }
-        input_iterators.push_back(end);
-    }
+    sorter_worker(
+        int num_w,
+        vector<long>::iterator begin, 
+        vector<long>::iterator end): nw(num_w), elem(begin, end) {}
 
     void ss1(
         logicBSP::ss_queue my_queue, 
         int worker_idx, 
         vector<logicBSP::ss_queue> next_queue)
     {
-        for(auto p = input_iterators[worker_idx]; p < input_iterators[worker_idx+1]; p++)
+        sort(elem.begin(), elem.end());
+        vector<long> samples;
+        auto range = elem.size() / (nw + 1);
+        auto extra = elem.size() % (nw + 1);
+        auto prev = elem.begin();
+        for(int i = 0; i < extra; i++) {
+            samples.push_back(*prev);
+            prev += (range + 1);
+        }
+        for(int i = 0; i < nw - extra; i++) {
+            samples.push_back(*prev);
+            prev += range;
+        }
+        samples.push_back(*(elem.end() - 1));
+
+        for(auto q : next_queue)
+            q->push_multiple(samples.begin(), samples.end());
     }
 
     void ss2(
@@ -41,7 +47,7 @@ struct sorter_logic: logicBSP<long> {
         int worker_idx, 
         vector<logicBSP::ss_queue> next_queue)
     {
-        
+
     }
 
     void ss3(
@@ -49,7 +55,7 @@ struct sorter_logic: logicBSP<long> {
         int worker_idx, 
         vector<logicBSP::ss_queue> next_queue)
     {
-        
+
     }
 
     logicBSP::ss_function switcher(int idx) {
@@ -57,29 +63,25 @@ struct sorter_logic: logicBSP<long> {
             using namespace std::placeholders;
             case 0: 
                 {
-                    auto f = bind(&sorter_logic::ss1, this, _1, _2, _3);
+                    auto f = bind(&sorter_worker::ss1, this, _1, _2, _3);
                     return f;
                 }
             case 1: 
                 {
-                    auto f = bind(&sorter_logic::ss2, this, _1, _2, _3);
+                    auto f = bind(&sorter_worker::ss2, this, _1, _2, _3);
                     return f;
                 }
             case 2: 
                 {
-                    auto f = bind(&sorter_logic::ss3, this, _1, _2, _3);
+                    auto f = bind(&sorter_worker::ss3, this, _1, _2, _3);
                     return f;
                 }
         }
         return nullptr;
     }
 
-    int ss_count() {
-        return 3;
-    }
-
     int nw;
-    vector<vector<long>::iterator> input_iterators;
+    vector<long> elem;
 
 };
 
@@ -100,24 +102,53 @@ int main(int argc, char *argv[]) {
 
     // Generate random unique vector (size n) with elements in range [0, 5*n)
     vector<long> in_tasks;
+    vector<long> comparison_task;
     vector<long> out_tasks(n);
     for(long i = 0; i < n*5; i++)
         in_tasks.push_back(i);
     shuffle(in_tasks.begin(), in_tasks.end(), default_random_engine(seed));
     in_tasks.erase(in_tasks.begin() + n, in_tasks.end());
+    comparison_task = in_tasks;
 
     {
         utimer timer("parallel version");
-        
-        sorter_logic logic(in_tasks.begin(), in_tasks.end(), nw);
-        posixBSP bsp(&logic, nw);
+
+        vector<logicBSP<long>*> workers;
+        auto range = in_tasks.size() / nw;
+        auto extra = in_tasks.size() % nw;
+        auto prev = in_tasks.begin();
+        for(int i = 0; i < extra; i++) {
+            workers.push_back(new sorter_worker(nw, prev, prev + range + 1));
+            prev += (range + 1);
+        }
+        for(int i = 0; i < nw - extra; i++) {
+            workers.push_back(new sorter_worker(nw, prev, prev + range));
+            prev += range;
+        }
+
+        posixBSP<long> bsp(workers, nw, 3);
         bsp.start_and_wait();
     }
 
     {
         utimer timer("std::sort");
-        sort(in_tasks.begin(), in_tasks.end());
+        sort(comparison_task.begin(), comparison_task.end());
     }
+
+    cout << "input" << endl;
+    for(auto i : in_tasks)
+        cout << i << " ";
+    cout << endl;
+
+    /*cout << "output" << endl;
+    for(auto i : out_tasks)
+        cout << i << " ";
+    cout << endl;*/
+    
+    cout << "comparison" << endl;
+    for(auto i : comparison_task)
+        cout << i << " ";
+    cout << endl;
 
     return 0;
 }

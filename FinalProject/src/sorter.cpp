@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <random>
 #include <optional> 
+#include <chrono>
 
 #include <ff/ff.hpp>
 #include <ff/all2all.hpp>
@@ -25,16 +26,17 @@ struct sorter_worker: logicBSP<long> {
         std::vector<logicBSP::ss_queue> next_queues)
     {
         std::sort(elem.begin(), elem.end());
+
         auto range = elem.size() / (nw + 1);
         auto extra = elem.size() % (nw + 1);
         auto prev = elem.begin();
         for(size_t i = 0; i < extra; i++) {
             samples.push_back(*prev);
-            prev += (range + 1);
+            prev += (range + 2);
         }
         for(size_t i = 0; i < nw - extra; i++) {
             samples.push_back(*prev);
-            prev += range;
+            prev += range + 1;
         }
         samples.push_back(*(elem.end() - 1));
 
@@ -56,6 +58,41 @@ struct sorter_worker: logicBSP<long> {
             samples.push_back(next.value());
 
         std::sort(samples.begin(), samples.end());
+
+        std::vector<long> separators;
+        auto range = samples.size() / (nw + 1);
+        auto extra = samples.size() % (nw + 1);
+        auto prev = samples.begin();
+        for(size_t i = 0; i < extra; i++) {
+            separators.push_back(*prev);
+            prev += (range + 2);
+        }
+        for(size_t i = 0; i < nw - extra; i++) {
+            separators.push_back(*prev);
+            prev += range + 1;
+        }
+        separators.push_back(*(samples.end() - 1));
+
+        auto elem_iter = elem.begin() + 1; // discard first sample
+        auto separator_iter = separators.begin(); 
+        for(size_t i = 0; i < next_queues.size(); i++) {
+            long next_separator = *(separator_iter+1);
+            auto q = next_queues[i];
+            std::vector<long> tmp;
+            while(*elem_iter < next_separator) {
+                if(worker_idx == i)
+                    output_v.push_back(*elem_iter);
+                else 
+                    tmp.push_back(*elem_iter);
+                elem_iter++;
+            }
+            if(worker_idx != i)
+                q->push_multiple(tmp.begin(), tmp.end());
+            else
+                output_v.push_back(*elem_iter);
+            elem_iter++;
+            separator_iter++;
+        }
     }
 
     void ss3(
@@ -63,7 +100,11 @@ struct sorter_worker: logicBSP<long> {
         size_t worker_idx, 
         std::vector<logicBSP::ss_queue> next_queues)
     {
+        std::optional<long> next;
+        while((next = my_queue->try_pop()).has_value())
+            output_v.push_back(next.value());
 
+        std::sort(output_v.begin(), output_v.end());
     }
 
     logicBSP::ss_function switcher(size_t idx) {
@@ -88,9 +129,15 @@ struct sorter_worker: logicBSP<long> {
         return nullptr;
     }
 
+    void dump_output() {
+        for(auto i : output_v)
+            std::cout << i << " ";
+    }
+
     size_t nw;
     std::vector<long> elem;
     std::vector<long> samples;
+    std::vector<long> output_v;
 
 };
 
@@ -137,6 +184,13 @@ int main(int argc, char *argv[]) {
 
         posixBSP<long> bsp(workers, nw, 3);
         bsp.start_and_wait();
+        std::cout << "output" << std::endl;
+        for(auto w : workers) { 
+            auto p = dynamic_cast<sorter_worker*>(w);
+            p->dump_output();
+        }
+        std::cout << std::endl;
+        
     }
 
     {
@@ -148,16 +202,6 @@ int main(int argc, char *argv[]) {
         utimer timer("std::sort");
         std::sort(std_sort.begin(), std_sort.end());
     }
-
-    std::cout << "input" << std::endl;
-    for(auto i : in_tasks)
-        std::cout << i << " ";
-    std::cout << std::endl;
-
-    /*std::cout << "output" << endl;
-    for(auto i : out_tasks)
-        std::cout << i << " ";
-    std::cout << endl;*/
     
     std::cout << "std::sort" << std::endl;
     for(auto i : std_sort)

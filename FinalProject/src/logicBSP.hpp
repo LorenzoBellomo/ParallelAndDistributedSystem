@@ -7,17 +7,15 @@
 
 #include <safeQueue.hpp>
 
-using namespace std;
-
 template <typename T>
 class logicBSP {
 
 protected: 
-    typedef shared_ptr<safe_queue<T>> ss_queue;
-    typedef function<void(ss_queue, int, vector<ss_queue>)> ss_function;
+    typedef std::shared_ptr<safe_queue<T>> ss_queue;
+    typedef std::function<void(ss_queue, size_t, std::vector<ss_queue>)> ss_function;
     
 public: 
-    virtual ss_function switcher(int ss_index) = 0;
+    virtual ss_function switcher(size_t ss_index) = 0;
 
 };
 

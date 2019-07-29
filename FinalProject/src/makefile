@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wfatal-errors 
-INCLUDES = -I . #-I /usr/local/lib/fastflow
+CXXFLAGS = -std=c++17 -Wall
+INCLUDES = -I . -I /usr/local/lib/fastflow
 OPTFLAGS = -O3
 LDFLAGS = -pthread
 
@@ -27,7 +27,3 @@ cleanall:
 all:
 	make cleanall
 	make $(TARGETS)
-
-debug:
-	rm -f prova
-	make prova

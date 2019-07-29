@@ -7,13 +7,11 @@
 #include <condition_variable>
 #include <thread>
 
-using namespace std; 
-
 class barrier {
 private:
 
-    mutex d_mutex;
-    condition_variable d_condition;
+    std::mutex d_mutex;
+    std::condition_variable d_condition;
     int counter, nw, iteration;
 
 public:

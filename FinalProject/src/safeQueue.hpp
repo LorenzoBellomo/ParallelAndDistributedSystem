@@ -34,7 +34,6 @@ public:
     {
         {
             std::unique_lock<std::mutex> lock(this->d_mutex);
-            //d_queue.insert(d_queue.begin(), begin, end);
             for(auto p = begin; p < end; p++)
                 d_queue.push_front(*p);
         }
@@ -49,13 +48,6 @@ public:
         return rc;
     }
 
-    void get_iterators(
-        typename std::deque<T>::reverse_iterator& begin,
-        typename std::deque<T>::reverse_iterator& end)
-    {
-        begin = d_queue.rbegin();
-        end = d_queue.rend();
-    }
 };
 
 #endif

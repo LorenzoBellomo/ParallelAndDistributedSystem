@@ -11,7 +11,8 @@ INCLUDE_FILES = logicBSP.hpp \
 		safeQueue.hpp \
 		utimer.hpp \
 		barrier.hpp \
-		queueMatrix.hpp
+		queueMatrix.hpp \
+		sorterLogic.hpp
 	
 .PHONY: all clean cleanall debug
 

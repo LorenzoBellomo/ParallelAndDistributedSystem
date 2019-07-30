@@ -9,6 +9,8 @@
 
 \graphicspath{ {./assets/latexImages/} }
 
+\def\code#1{\texttt{#1}}
+
 \title{SPM Project: BSP}
 \author{Lorenzo Bellomo, 531423}
 \date{AA 2018/2019}
@@ -68,6 +70,21 @@ For what regards the user provided business logic code, which regards both the c
 
 \section{Implementation Structure and Details}
 \label{sec:implDetails}
+All the source code files are under directory \emph{src} and are provided under the form of header only files. \\The files provided are:
+\begin{itemize}
+	\item \code{sorter.cpp}: it contains the main method and the \emph{FastFlow} business logic code. 
+	\item \code{sorterLogic.hpp}: it contains the business logic code for the custom \emph{BSP} execution.
+	\item \code{posixBSP.hpp}: it contains the implementation (with \emph{POSIX threads}) of the BSP pattern.
+	\item \code{logicBSP.hpp}: it contains the interface that hosts the business logic code abstraction. Every application should subclass the one provided in this file to provide the business logic code.
+	\item \code{barrier.hpp}: it contains an implementation of a reusable (context aware) barrier, implemented with a mutex and a condition variable.
+	\item \code{safeQueue.hpp}: it contains the queue implementation used. Its discussion will be delayed to section \ref{sec:queue}.
+	\item \code{queueMatrix.hpp}: It contains a class to handle a matrix of queues. Its use will be to give to every worker a queue \emph{for each} super step. The matrix dimension will be $matrix[\#\mathit{ss}][\mathit{nw}]$.
+	\item \code{utimer.hpp}
+	\item \code{makefile}: the only thing worth noting is that the code is optimized with \code{-O3}, and the \emph{FastFlow} include path might have to be changed. The one provided works with the installation on the remote \emph{XEON PHI} machine. Just issuing \code{make all} should work.
+\end{itemize}
+
+\subsection{Communications}
+\label{sec:queue}
 
 \section{Experimental Evaluation}
 \label{sec:eval}

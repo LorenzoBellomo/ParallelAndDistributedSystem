@@ -20,6 +20,7 @@
 \maketitle
 
 \section{Introduction}
+
 In this report the \emph{Bulk Synchronous Pattern} (BSP) will be analysed both from a theoretical viewpoint and from a practical one. \\
 The outline of the report will be the following:
 \begin{itemize}
@@ -31,6 +32,7 @@ The outline of the report will be the following:
 
 \section{Parallel Architecture Design}
 \label{sec:parDesign}
+
 BSP is by nature a parallel bridging model. The main idea is that the process is divided in three phases (as shown in figure \ref{fig:BSP}):
 \begin{itemize}
 	\item \emph{Local computation}: The processors act independently and compute their task on a different partition of the input data.
@@ -48,6 +50,7 @@ This whole process made of 3 phases composes a \emph{super step}.
 
 \section{Performance Modeling}
 \label{sec:perfModel}
+
 In order to theoretically model the performances of a BSP algorithm some values are going to be defined:
 \begin{itemize}
 	\item $\mathit{nw}$ is the number of workers (BSP processors).
@@ -66,25 +69,49 @@ $$ \mathit{tot\_cost} = I + \sum_{j=1}^{k} \mathit{SS}_j + F $$
 \subsection{Opportunities for parallelism}
 According to the model provided, the opportunities for parallelization reside in the \emph{super step cost}, which ideally should decrease linearly by increasing the number of parallel activities. In particular, it is safe to assume that $w_i = \Theta(n/\mathit{nw}) \, \forall i$, while instead both the communication cost and the barrier cost are pure overhead, which grows with $\mathit{nw}$. \\
 In this particular problem, the parallel design is already provided, but the goal of the implementation is to minimize the overheads, with particular focus on the \emph{communication} one, which can be assumed to be the most costly. \\
+
 For what regards the user provided business logic code, which regards both the computation phase and the communication one, the scalability of the provided \emph{BSP} depends on the goodness of the business logic code.
 
 \section{Implementation Structure and Details}
 \label{sec:implDetails}
+
 All the source code files are under directory \emph{src} and are provided under the form of header only files. \\The files provided are:
 \begin{itemize}
 	\item \code{sorter.cpp}: it contains the main method and the \emph{FastFlow} business logic code. 
-	\item \code{sorterLogic.hpp}: it contains the business logic code for the custom \emph{BSP} execution.
-	\item \code{posixBSP.hpp}: it contains the implementation (with \emph{POSIX threads}) of the BSP pattern.
-	\item \code{logicBSP.hpp}: it contains the interface that hosts the business logic code abstraction. Every application should subclass the one provided in this file to provide the business logic code.
+	\item \code{sorterLogic.hpp}: it contains the business logic code for the custom \emph{BSP} execution with standard \emph{POSIX} threads.
+	\item \code{posixBSP.hpp}: it contains the implementation (with \emph{POSIX} threads) of the BSP pattern.
+	\item \code{logicBSP.hpp}: it contains the interface that hosts the business logic code abstraction. Every application should subclass the one provided in this file to provide the business logic code. More in section \ref{sec:business}.
 	\item \code{barrier.hpp}: it contains an implementation of a reusable (context aware) barrier, implemented with a mutex and a condition variable.
 	\item \code{safeQueue.hpp}: it contains the queue implementation used. Its discussion will be delayed to section \ref{sec:queue}.
 	\item \code{queueMatrix.hpp}: It contains a class to handle a matrix of queues. Its use will be to give to every worker a queue \emph{for each} super step. The matrix dimension will be $matrix[\#\mathit{ss}][\mathit{nw}]$.
 	\item \code{utimer.hpp}
 	\item \code{makefile}: the only thing worth noting is that the code is optimized with \code{-O3}, and the \emph{FastFlow} include path might have to be changed. The one provided works with the installation on the remote \emph{XEON PHI} machine. Just issuing \code{make all} should work.
+	\item \emph{benchmark folder}: The analysis of the content of this folder is postponed to section \ref{sec:eval}.
 \end{itemize}
 
 \subsection{Communications}
 \label{sec:queue}
+The queue implementation is a modification of the one provided during classes. The main difference is that writes to the queue are synchronized, while reads are not. \\ This is made possible by the fact that reads are always performed after a barrier, which makes the synchronization implicit. Writes have to be executed in mutual exclusion because multiple producers may potentially write together. In order to reduce the syncronization overhead, it is suggested to use the method \code{push\_multiple(iterator, iterator)}, in order to lock once the queue and then release it immediately.
+
+\subsection{Threads}
+The code of the threads is a private function (\code{worker}) in file \code{posixBSP.hpp}. \\
+It should be noted that the program tries to stick the worker threads to one core in increasing order (thread 0 to core 0, thread 1 to core 1\dots) with \code{pthread\_setaffinity\_np}. If this process fails then the computation goes on without sticking the threads to cores.
+
+
+\subsection{Business Logic Code}
+\label{sec:business}
+In order to write code that can be fed to the provided BSP implementation, one has to subclass \code{logicBSP}. This is an interface that models a generic worker (see \code{sorterLogic.hpp} for an example). \\
+
+One has to provide the code of the worker's \emph{super steps} (every worker has its own local state) and it must provide a switcher function that maps every function to a super step number. \\
+The code of a generic super step has to be a function with this signature: 
+\begin{figure}[H]
+	\centering
+	\begin{minipage}{0.9\textwidth}		
+		\code{void ss(logicBSP::ss\_queue, size\_t, std::vector<logicBSP::ss\_queue>)}
+	\end{minipage}
+\end{figure}
+
+\subsection{FastFlow Implementation}
 
 \section{Experimental Evaluation}
 \label{sec:eval}

@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
-INCLUDES = -I . -I /usr/local/lib/fastflow
+INCLUDES = -I . -I /usr/local/fastflow
 OPTFLAGS = -O3
 LDFLAGS = -pthread
 

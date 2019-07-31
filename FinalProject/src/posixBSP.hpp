@@ -25,11 +25,26 @@ private:
     barrier barr, end_barrier;
     bool global_end;
 
+    // force a given std::thread to be executed on one of the thread contexts available
+    void try_stick_current_thread(std::thread *tid, int coreno) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(coreno, &cpuset);  // without % those in excess are free to move
+    if(pthread_setaffinity_np(tid->native_handle(),sizeof(cpu_set_t), &cpuset) != 0) {
+        auto reason = errno; 
+        std::cerr << "Error while sticking current thread to core: "
+            << (reason == EINVAL ? "EINVAL" : (reason == EFAULT ? "EFAULT" : 
+            (reason == ESRCH ? "ESRCH" : "UNKNOWN"))) << std::endl;
+        }
+    }
+
     void worker(size_t worker_idx) {
 
         size_t current_ss = 0;
         bool end = false;
         logicBSP<T> *my_logic = logic[worker_idx];
+
+        try_stick_current_thread(&thds[worker_idx], worker_idx);
 
         while(!end) {
             ss_queue my_queue = matrix.get_queue(current_ss, worker_idx);

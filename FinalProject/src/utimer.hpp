@@ -31,6 +31,17 @@ public:
                 << std::endl;
 
     }
+
+    static long elapsed(std::chrono::system_clock::time_point before) {
+
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed = after - before;
+        
+        auto musec =
+            std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
+        return musec;
+    }
 };
 
 #endif

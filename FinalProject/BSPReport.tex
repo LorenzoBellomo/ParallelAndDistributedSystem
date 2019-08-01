@@ -77,7 +77,7 @@ For what regards the user provided business logic code, which regards both the c
 
 All the source code files are under directory \emph{src} and are provided under the form of header only files. \\The files provided are:
 \begin{itemize}
-	\item \code{sorter.cpp}: it contains the main method and the \emph{FastFlow} business logic code. 
+	\item \code{sorter.cpp}: it contains the main method. 
 	\item \code{sorterLogic.hpp}: it contains the business logic code for the custom \emph{BSP} execution with standard \emph{POSIX} threads.
 	\item \code{posixBSP.hpp}: it contains the implementation (with \emph{POSIX} threads) of the BSP pattern.
 	\item \code{logicBSP.hpp}: it contains the interface that hosts the business logic code abstraction. Every application should subclass the one provided in this file to provide the business logic code. More in section \ref{sec:business}.
@@ -85,8 +85,7 @@ All the source code files are under directory \emph{src} and are provided under 
 	\item \code{safeQueue.hpp}: it contains the queue implementation used. Its discussion will be delayed to section \ref{sec:queue}.
 	\item \code{queueMatrix.hpp}: It contains a class to handle a matrix of queues. Its use will be to give to every worker a queue \emph{for each} super step. The matrix dimension will be $matrix[\#\mathit{ss}][\mathit{nw}]$.
 	\item \code{utimer.hpp}
-	\item \code{makefile}: the only thing worth noting is that the code is optimized with \code{-O3}, and the \emph{FastFlow} include path might have to be changed. The one provided works with the installation on the remote \emph{XEON PHI} machine. Just issuing \code{make all} should work.
-	\item \emph{benchmark folder}: The analysis of the content of this folder is postponed to section \ref{sec:eval}.
+	\item \code{makefile}
 \end{itemize}
 
 \subsection{Communications}
@@ -110,8 +109,6 @@ The code of a generic super step has to be a function with this signature:
 		\code{void ss(logicBSP::ss\_queue, size\_t, std::vector<logicBSP::ss\_queue>)}
 	\end{minipage}
 \end{figure}
-
-\subsection{FastFlow Implementation}
 
 \section{Experimental Evaluation}
 \label{sec:eval}

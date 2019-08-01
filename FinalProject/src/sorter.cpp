@@ -5,9 +5,6 @@
 #include <random>
 #include <optional> 
 
-//#include <ff/ff.hpp>
-//#include <ff/all2all.hpp>
-
 #include <utimer.hpp>
 #include <logicBSP.hpp>
 #include <posixBSP.hpp>
@@ -17,7 +14,7 @@
 int main(int argc, char *argv[]) {
 
     if(argc != 3 && argc != 4) {
-        std::cout << "Usage is ./sorter n nw (opt:seed)" << std::endl
+        std::cerr << "Usage is ./sorter n nw (opt:seed)" << std::endl
             << "Where:" << std::endl 
             << "- n is the number of elements" << std::endl
             << "- nw is the number of workers" << std::endl
@@ -28,6 +25,15 @@ int main(int argc, char *argv[]) {
     long n = atoi(argv[1]);
     size_t nw = atoi(argv[2]);
     int seed = (argc == 4)? atoi(argv[3]) : time(NULL);
+
+    if(nw <= 0) {
+        std::cerr << "need at least one worker" << std::endl;
+        return -1;
+    }
+    if(n <= 0) {
+        std::cerr << "invalid vector size" << std::endl;
+        return -1;
+    }
 
     // Generate random unique vector (size n) with elements in range [0, 5*n)
     std::vector<long> in_tasks;
@@ -57,11 +63,9 @@ int main(int argc, char *argv[]) {
 
         posixBSP<long> bsp(workers, nw, 3);
         bsp.start_and_wait();
-    }
-
-    {
-        utimer timer("FastFlow version");
-        
+#ifdef TSEQ
+        bsp.dump_tseq();
+#endif
     }
 
     {

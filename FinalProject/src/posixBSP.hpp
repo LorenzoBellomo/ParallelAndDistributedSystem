@@ -44,7 +44,10 @@ private:
         bool end = false;
         logicBSP<T> *my_logic = logic[worker_idx];
 
+#ifndef PROFILE
+        std::cout << "Trying to stick" << std::endl;
         try_stick_current_thread(&thds[worker_idx], worker_idx);
+#endif
 
         while(!end) {
             ss_queue my_queue = matrix.get_queue(current_ss, worker_idx);

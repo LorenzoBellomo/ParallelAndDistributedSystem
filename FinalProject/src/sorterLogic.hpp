@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <optional> 
+#include <ctime>
 
 #include <logicBSP.hpp>
 
@@ -24,6 +25,25 @@ public:
         std::vector<long>::iterator begin, 
         std::vector<long>::iterator end): nw(num_w), elem(begin, end) {}
 
+    static std::vector<long> split_with_samples(std::vector<long> in_vector, size_t p) {
+        std::vector<long> tmp;
+
+        auto range = in_vector.size() / (p + 1);
+        auto extra = in_vector.size() % (p + 1);
+        auto prev = in_vector.begin();
+        for(size_t i = 0; i < extra; i++) {
+            tmp.push_back(*prev);
+            prev += (range + 2);
+        }
+        for(size_t i = 0; i < p - extra; i++) {
+            tmp.push_back(*prev);
+            prev += range + 1;
+        }
+        tmp.push_back(*(in_vector.end() - 1));
+
+        return tmp;
+    }
+
     void ss1(
         logicBSP::ss_queue my_queue, 
         size_t worker_idx, 
@@ -31,18 +51,7 @@ public:
     {
         std::sort(elem.begin(), elem.end());
 
-        auto range = elem.size() / (nw + 1);
-        auto extra = elem.size() % (nw + 1);
-        auto prev = elem.begin();
-        for(size_t i = 0; i < extra; i++) {
-            samples.push_back(*prev);
-            prev += (range + 2);
-        }
-        for(size_t i = 0; i < nw - extra; i++) {
-            samples.push_back(*prev);
-            prev += range + 1;
-        }
-        samples.push_back(*(elem.end() - 1));
+        samples = split_with_samples(elem, nw);
 
         for(size_t i = 0; i <  next_queues.size(); i++) {
             if(i != worker_idx) {
@@ -63,20 +72,8 @@ public:
 
         std::sort(samples.begin(), samples.end());
 
-        std::vector<long> separators;
-        auto range = samples.size() / (nw + 1);
-        auto extra = samples.size() % (nw + 1);
-        auto prev = samples.begin();
-        for(size_t i = 0; i < extra; i++) {
-            separators.push_back(*prev);
-            prev += (range + 2);
-        }
-        for(size_t i = 0; i < nw - extra; i++) {
-            separators.push_back(*prev);
-            prev += range + 1;
-        }
-        separators.push_back(*(samples.end() - 1));
-
+        std::vector<long> separators = split_with_samples(samples, nw);
+    
         auto elem_iter = elem.begin();
         auto separator_iter = separators.begin(); 
         for(size_t i = 0; i < next_queues.size(); i++) {

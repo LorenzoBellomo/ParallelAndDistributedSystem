@@ -24,7 +24,7 @@ clean:
 	rm -f $(TARGETS)
 
 cleanall: clean
-	rm -f benchmark/dump/*
+	rm -f benchmark/data/*
 	rm -f benchmark/gprof-helper.so
 
 all: clean

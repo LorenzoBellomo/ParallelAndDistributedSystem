@@ -12,7 +12,7 @@ N=1048576
 
 for((i=0;i<9;++i)); do # from 1 to 256 increasing by power of 2
     echo "executing with NW = $NW"
-    FILENAME=benchmark/dump/nw_${NW}.txt
+    FILENAME=benchmark/data/nw_${NW}.txt
     echo "============================================" >> $FILENAME > $FILENAME
     for((j=0;j<10;++j)); do # from 2^20 to 2^30 increasing by power of 2
         echo "N = $N"
@@ -27,3 +27,5 @@ for((i=0;i<9;++i)); do # from 1 to 256 increasing by power of 2
     N=1048576
     NW=$((NW * 2))
 done
+
+echo "output writter to benchmark folder"

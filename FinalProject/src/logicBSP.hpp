@@ -5,6 +5,10 @@
 #include <iostream>
 #include <functional>
 
+#ifdef TSEQ
+#include <map>
+#endif
+
 #include <safeQueue.hpp>
 
 template <typename T>
@@ -16,6 +20,10 @@ protected:
     
 public: 
     virtual ss_function switcher(size_t ss_index) = 0;
+
+#ifdef TSEQ
+    virtual void dump_tseq() = 0;
+#endif
 
 };
 

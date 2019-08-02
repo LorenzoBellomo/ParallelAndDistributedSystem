@@ -51,7 +51,7 @@ private:
         }
     }
 
-    void worker(size_t worker_idx) {
+    void worker(size_t worker_idx, bool stick) {
 
         size_t current_ss = 0;
         bool end = false;
@@ -59,7 +59,8 @@ private:
 
 #ifndef PROFILE
         // for some reason thread sticking doesn't work with gprof
-        try_stick_current_thread(&thds[worker_idx], worker_idx);
+        if(stick)
+            try_stick_current_thread(&thds[worker_idx], worker_idx);
 #endif
 
         while(!end) {
@@ -120,8 +121,10 @@ public:
     
 
     void start_and_wait() {
+        unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
+        bool stick = concurentThreadsSupported >= nw;
         for(size_t i = 0; i < nw; i++) 
-            thds.push_back(std::thread(&posixBSP<T>::worker, this, i));
+            thds.push_back(std::thread(&posixBSP<T>::worker, this, i, stick));
 
         while(!global_end) {
             end_barrier.barrier_wait();
@@ -146,7 +149,12 @@ public:
     }
 
     void dump_tseq() {
+
 #ifdef TSEQ
+        std::map<std::string, long>::iterator begin, end;
+        for(auto l : logic) 
+            l->dump_tseq();
+        
         for(auto e : time_map)
             std::cout << e.first << " -> " << e.second << " usec" << std::endl;
 #else

@@ -2,6 +2,12 @@
 #ifndef QUEUE_MATRIX
 #define QUEUE_MATRIX
 
+/*
+    filename: queueMatrix.hpp
+    author: Lorenzo Bellomo
+    description: Matrix of safe_queues
+*/
+
 #include <iostream>
 #include <vector>
 

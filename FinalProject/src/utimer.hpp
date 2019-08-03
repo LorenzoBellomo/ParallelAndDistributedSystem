@@ -1,11 +1,15 @@
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <thread>
-#include <ctime>
 
 #ifndef UTIMER
 #define UTIMER
+
+/*
+    filename: utimer.hpp
+    author: Lorenzo Bellomo
+    description: timer
+*/
+
+#include <iostream>
+#include <chrono>
 
 class utimer {
     std::chrono::system_clock::time_point start;
@@ -32,6 +36,7 @@ public:
 
     }
 
+    // static method, it takes a previous time and returns the long microseconds elapsed
     static long elapsed(std::chrono::system_clock::time_point before) {
 
         auto after = std::chrono::system_clock::now();

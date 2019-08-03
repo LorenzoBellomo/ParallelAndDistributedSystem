@@ -2,6 +2,12 @@
 #ifndef POSIX_BSP
 #define POSIX_BSP
 
+/*
+    filename: posixBSP.hpp
+    author: Lorenzo Bellomo
+    description: The BSP runtime class
+*/
+
 #include <iostream>
 #include <vector>
 #include <functional>
@@ -27,18 +33,24 @@ private:
     typedef std::function<void(ss_queue, size_t, std::vector<ss_queue>)> ss_function;
 
 #ifdef TSEQ
+    // collection of partial times
     std::map<std::string, long> time_map;
     std::stringstream ss;
 #endif
 
-    std::vector<logicBSP<T>*> logic;
-    size_t nw, ss_count, global_ss;
+    std::vector<logicBSP<T>*> logic; // vector of workers, passed by user
+    // global_ss is only updated at the end of all the super steps
+    size_t nw, ss_count, global_ss, global_end_next_ss;
     std::vector<std::thread> thds;
-    queue_matrix<T> matrix; // matrix[ss_num][nw]
-    barrier barr, end_barrier;
-    bool global_end;
+    queue_matrix<T> matrix; // matrix[ss_num][nw] of safe_queues (check queueMatrix.hpp)
+    barrier barr, end_barrier;  // barrier is the one shared between workers
+                                // end_barrier is used to make the global end check
+    bool global_end;    // used to syncronize workers and tell them if the BSP is over or not
+    std::function<bool(std::vector<logicBSP<T>*>)> termination_condition;
+
 
     // force a given std::thread to be executed on one of the thread contexts available
+    // in case of failure, just exit without sticking the thread
     void try_stick_current_thread(std::thread *tid, int coreno) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -51,11 +63,13 @@ private:
         }
     }
 
+    // worker loop, it takes a worker id (in range [0, nw)) and a boolean which is 
+    // true if the program has to try and stick one worker per core, and false otherwise
     void worker(size_t worker_idx, bool stick) {
 
-        size_t current_ss = 0;
-        bool end = false;
-        logicBSP<T> *my_logic = logic[worker_idx];
+        size_t current_ss = 0; // local view of current super step
+        bool end = false; // end is true if the global condition is true
+        logicBSP<T> *my_logic = logic[worker_idx]; // handler to the worker of index worker_idx
 
 #ifndef PROFILE
         // for some reason thread sticking doesn't work with gprof
@@ -70,20 +84,21 @@ private:
             ss_queue my_queue = matrix.get_queue(current_ss, worker_idx);
             std::vector<ss_queue> next_queues = (current_ss < ss_count - 1)? 
                 matrix.get_ss_queues(current_ss + 1) : 
-                matrix.get_ss_queues(global_end_next_ss());
+                matrix.get_ss_queues(global_end_next_ss()); // if I'm at the end then I want the next queue
+                                                            // from the super step the BSP loop restarts to
                     
             auto ss_funct = my_logic->switcher(current_ss);
-            ss_funct(my_queue, worker_idx, next_queues);
+            ss_funct(my_queue, worker_idx, next_queues); // super step function call
 
 #ifdef TSEQ
-            ss.str("");
+            ss.str(""); // save time of super step (both communication and computation)
             ss.clear();
             ss << "super step " << current_ss << " worker " << worker_idx;
             time_map.insert({ss.str(), utimer::elapsed(start)});
             start = std::chrono::system_clock::now();
 #endif
 
-            barr.barrier_wait();
+            barr.barrier_wait(); // syncronization
 
 #ifdef TSEQ
             ss.str("");
@@ -94,7 +109,7 @@ private:
 #endif
 
             if(++current_ss == ss_count) {
-                // first barrier is to signal the main thread that 
+                // first end barrier wait is to signal the main thread that 
                 // the end of the super steps was reached
                 end_barrier.barrier_wait();
                 // the second one is to ensure that the main thread could
@@ -115,39 +130,52 @@ private:
     
 public:
 
+    // constructor (vector of workers, parallelism degree, number of super steps)
     posixBSP(const std::vector<logicBSP<T>*>& _logic, size_t num_w, size_t num_ss): 
         logic(_logic), nw(num_w), ss_count(num_ss), matrix(num_ss, num_w), 
-        barr(num_w), end_barrier(nw+1), global_end(false) {}
-    
+        barr(num_w), end_barrier(nw+1), global_end(false), global_end_next_ss(0)
+    // end barrier waits nw+1 threads because the main too (the one that calls start_and_wait)
+    // waits there, and computes at the end  the global continuation condition
+    {
+        termination_condition = [] (bool(std::vector<logicBSP<T>*>) workers) {
+            return true;
+        }
+    }
+
 
     void start_and_wait() {
+        // check if the
         unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
-        bool stick = concurentThreadsSupported >= nw;
+        bool stick = ((concurentThreadsSupported >= nw) || (concurentThreadsSupported == 0));
+        if(concurrentThreadsSupported == 0) 
+            std::cout << "Weird" << std::endl;
+
         for(size_t i = 0; i < nw; i++) 
             thds.push_back(std::thread(&posixBSP<T>::worker, this, i, stick));
 
         while(!global_end) {
+            // I wait for all super steps to end
             end_barrier.barrier_wait();
+            // at this point I compute the global end condition
             if(global_end_condition(logic))
                 global_end = true;
             else 
                 global_ss = global_end_next_ss();
             end_barrier.barrier_wait();
-
+            // and I notify to all the workers now
         }
 
         for(auto& t : thds)
             t.join();
     }
 
-    bool global_end_condition(std::vector<logicBSP<T>*> logic) {
-        return true;
+    // to change the global end condition function
+    void set_termination_function(std::function<bool(std::vector<logicBSP<T>*>)> term, size_t next_ss) {
+        termination_condition = term;
+        global_end_next_ss = next_ss;
     }
 
-    int global_end_next_ss() {
-        return 0;
-    }
-
+    // display the partial times computed
     void dump_tseq() {
 
 #ifdef TSEQ

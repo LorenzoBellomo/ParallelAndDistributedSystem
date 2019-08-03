@@ -2,6 +2,12 @@
 #ifndef SORTER_LOGIC
 #define SORTER_LOGIC
 
+/*
+    filename: sorterLogic.hpp
+    author: Lorenzo Bellomo
+    description: The logicBSP subclass that implements the Tiskin sorting algorithm
+*/
+
 #include <iostream>
 #include <vector>
 #include <optional> 
@@ -36,6 +42,7 @@ public:
         std::vector<long>::iterator begin, 
         std::vector<long>::iterator end): nw(num_w), elem(begin, end) {}
 
+    // split in_vector in p ranges by computing p+1 samples, and return the p+1 samples equally spaced
     static std::vector<long> split_with_samples(std::vector<long> in_vector, size_t p) {
         std::vector<long> tmp;
 
@@ -113,6 +120,8 @@ public:
         start = std::chrono::system_clock::now();
 #endif
     
+        // below is just a linear algorithm (O(size(elem))) to split the elements of elem
+        // between the output queues according to the separators
         auto elem_iter = elem.begin();
         auto separator_iter = separators.begin(); 
         for(size_t i = 0; i < next_queues.size(); i++) {
@@ -120,18 +129,18 @@ public:
             auto q = next_queues[i];
             std::vector<long> tmp;
             while(*elem_iter < next_separator && elem_iter != elem.end()) {
-                if(worker_idx == i)
+                if(worker_idx == i) // I do not put them in the queue
                     output_v.push_back(*elem_iter);
                 else 
-                    tmp.push_back(*elem_iter);
-
+                    tmp.push_back(*elem_iter); 
+                // I store in a tmp vector and send it all later to lock the queue only once
                 elem_iter++;
             }
-            if(worker_idx != i)
+            if(worker_idx != i) 
                 q->push_multiple(tmp.begin(), tmp.end());
             separator_iter++;
         }
-        if(worker_idx == nw-1)
+        if(worker_idx == nw-1) // the last worker misses the last separator with the provided algorithm
             output_v.push_back(separators[nw]);
 
 #ifdef TSEQ
@@ -165,6 +174,7 @@ public:
 #endif
     }
 
+    // switcher function, maps ss1 to super step indexed 0, ss2 to 1 and ss3 to 2
     logicBSP::ss_function switcher(size_t idx) {
         switch(idx) {
             using namespace std::placeholders;

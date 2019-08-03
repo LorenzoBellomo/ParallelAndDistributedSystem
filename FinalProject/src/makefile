@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
-DEBUG = -pg
+DEBUG = -pg # not used when calling make all, but only make profile 
 INCLUDES = -I .
 OPTFLAGS = -O3
 LDFLAGS = -pthread

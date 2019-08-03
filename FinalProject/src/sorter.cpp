@@ -1,4 +1,10 @@
 
+/*
+    filename: sorter.hpp
+    author: Lorenzo Bellomo
+    description: The file with the main function
+*/
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -36,6 +42,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Generate random unique vector (size n) with elements in range [0, 5*n)
+    // the time needed to generate the input vector is not kept while performing the measurements
     std::vector<long> in_tasks;
     std::vector<long> std_sort;
     std::vector<long> out_tasks(n);
@@ -49,6 +56,8 @@ int main(int argc, char *argv[]) {
         utimer timer("Posix version");
 
         std::vector<logicBSP<long>*> workers;
+
+        // split input data between workers
         auto range = in_tasks.size() / nw;
         auto extra = in_tasks.size() % nw;
         auto prev = in_tasks.begin();
@@ -61,9 +70,11 @@ int main(int argc, char *argv[]) {
             prev += range;
         }
 
+        // generate BSP object and start the bsp
         posixBSP<long> bsp(workers, nw, 3);
         bsp.start_and_wait();
 #ifdef TSEQ
+        // just display the partial times
         bsp.dump_tseq();
 #endif
     }

@@ -9,28 +9,17 @@ cd $1
 make tseq
 
 FILENAME=benchmark/data/tseq.out 
+NW=1
+echo "" > $FILENAME
 
-echo "executing 3000000 items, 1 worker"
-echo "3000000 items, 1 worker" > $FILENAME
-echo "===============================================" >> $FILENAME
-./sorter 3000000 1 123 >> $FILENAME
-echo "===============================================" >> $FILENAME
-
-echo "executing 3000000 items, 2 workers"
-echo "3000000 items, 2 workers" >> $FILENAME
-echo "===============================================" >> $FILENAME
-./sorter 3000000 2 123 >> $FILENAME
-echo "===============================================" >> $FILENAME
-
-echo "executing 3000000 items, 8 workers"
-echo "3000000 items, 8 workers" >> $FILENAME
-echo "===============================================" >> $FILENAME
-./sorter 3000000 8 123 >> $FILENAME
-echo "===============================================" >> $FILENAME
-
-echo "executing 3000000 items, 256 workers"
-echo "3000000 items, 256 workers" >> $FILENAME
-echo "===============================================" >> $FILENAME
-./sorter 3000000 256 123 >> $FILENAME
+for((i=0;i<9;++i)); do # from 1 to 256 increasing by power of 2
+    echo "executing with NW = $NW"
+	echo "3000000 items, $NW workers" >> $FILENAME
+	echo "===============================================" >> $FILENAME
+	for((z=0;z<5;++z)); do
+		./sorter 3000000 $NW 123 >> $FILENAME
+	done
+	echo "===============================================" >> $FILENAME
+done
 
 echo "output written to $FILENAME"

@@ -10,6 +10,12 @@
 #include <optional>
 #include <vector>
 
+/*
+    filename: safeQueue.hpp
+    author: Lorenzo Bellomo
+    description: A queue that is syncronized in writes but not in reads
+*/
+
 template <typename T>
 class safe_queue {
 private:
@@ -40,6 +46,7 @@ public:
         this->d_condition.notify_one();
     }
 
+    // returns nullopt if the queue is empty
     std::optional<T> try_pop() {
         if(this->d_queue.empty())
             return {};

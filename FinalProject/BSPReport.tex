@@ -6,6 +6,9 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{lmodern}
+\usepackage{diagbox}
+\usepackage{booktabs}
+\usepackage{siunitx}
 
 \graphicspath{ {./assets/latexImages/} }
 
@@ -48,8 +51,7 @@ This whole process made of 3 phases composes a \emph{super step}.
 	\label{fig:BSP}
 \end{figure}
 
-
-\section{Performance Modeling}
+\section{Performance Modelling}
 \label{sec:perfModel}
 
 In order to theoretically model the performances of a BSP algorithm some values are going to be defined:
@@ -92,17 +94,17 @@ All the source code files are under directory \emph{src} and are provided under 
 
 \subsection{Communications}
 \label{sec:queue}
-The queue implementation is a modification of the one provided during classes. The main difference is that writes to the queue are synchronized, while reads are not. \\ This is made possible by the fact that reads are always performed after a barrier, which makes the synchronization implicit. Writes have to be executed in mutual exclusion because multiple producers may potentially write together. In order to reduce the syncronization overhead, it is suggested to use the method \code{push\_multiple(iterator, iterator)}, in order to lock once the queue and then release it immediately.
+The queue implementation is a modification of the one provided during classes. The main difference is that writes to the queue are synchronized, while reads are not. \\ This is made possible by the fact that reads are always performed after a barrier, which makes the synchronization implicit. Writes have to be executed in mutual exclusion because multiple producers may potentially write together. In order to reduce the synchronization overhead, it is suggested to use the method \code{push\_multiple(iterator, iterator)}, in order to lock once the queue and then release it immediately.
 
 \subsection{Threads}
 The code of the threads is a private function (\code{worker}) in file \code{posixBSP.hpp}. \\
-It should be noted that the program tries to stick the worker threads to one core in increasing order (thread 0 to core 0, thread 1 to core 1\dots) with \code{pthread\_setaffinity\_np}. If this process fails then the computation goes on without sticking the threads to cores.
+It should be noted that the program tries to stick the worker threads to one core in increasing order (thread 0 to core 0, thread 1 to core 1\dots) with \code{pthread\_setaffinity\_np}. If this process fails then the computation goes on without sticking the threads to cores. \\
+As explained, one thread executes the code of one worker (which may comprise more super steps), so in total only $\mathit{nw}$ threads are spawned by the runtime.
 
 
 \subsection{Business Logic Code}
 \label{sec:business}
 In order to write code that can be fed to the provided BSP implementation, one has to subclass \code{logicBSP}. This is an interface that models a generic worker (see \code{sorterLogic.hpp} for an example). \\
-
 One has to provide the code of the worker's \emph{super steps} (every worker has its own local state) and it must provide a switcher function that maps every function to a super step number. \\
 The code of a generic super step has to be a function with this signature: 
 \begin{figure}[H]
@@ -111,22 +113,68 @@ The code of a generic super step has to be a function with this signature:
 		\code{void ss(logicBSP::ss\_queue, size\_t, std::vector<logicBSP::ss\_queue>)}
 	\end{minipage}
 \end{figure}
-Where \code{logicBSP::ss\_queue} is just an alias for a pointer to a \code{safe\_queue<T>}. The runtime will give the handle to the workers' \emph{input queue} and the collection of \emph{output\_queues}, indexed exactly like the workers (where \code{output\_queues[i]} is the queue belonging to worker \code{i}).
+Where \code{logicBSP::ss\_queue} is just an alias for a pointer to a \code{safe\_queue<T>}. The runtime will give the handle to the workers' \emph{input queue} and the collection of \emph{output\_queues}, indexed exactly like the workers (where \code{output\_queues[i]} is the queue belonging to worker \code{i}). \\
+This way, every worker keeps its own local state, which survives every super step call.
 
 \section{Experimental Evaluation}
 \label{sec:eval}
-Benchmark data were collected with a the 3 provided scripts in the \code{benchmark} folder, analysed in section \ref{sec:benchFold}, while the data were gathered and displayed in section \ref{sec:plots}.
+Benchmark data were collected with the provided scripts in the \code{benchmark} folder (see section \ref{sec:benchFold}), while the data were gathered and displayed in section \ref{sec:plots}. \\
+The test have been made on the \emph{Xeon Phi} and the results shown refer exclusively to data collected on that machine. \\
+The project was compiled with \code{g++} version \code{7.4.0} provided on the machine, and with the options provided in the \code{makefile}.
 
 \subsection{Benchmark Folder}
 \label{sec:benchFold}
 This folder is organized as follows:
 \begin{itemize}
-	\item \code{benchmark.sh}: This bash script automates the benchmarking process. It starts the program with different parallelism degrees and different input vector sizes. It executes every combination of $n$ (size of input vector) and $\mathit{nw}$ 3 times in order to then compute an average of each time.
-	\item \code{gprof-helper.c}: This file is needed in order to allow \emph{gprof} profiling for multithreaded applications. It provides wrappers for the \code{pthread} creation.
-	\item \code{profiler.sh}: This bash script automates the profiling process. At the end of the script execution, it dumps the profiling output in a file, by starting the program with various parallelism degrees.
-	\item \code{tseq.sh}: This bash script collects some times from the program execution. In particular, it collects, for each worker, the \emph{super step} time, the \emph{barrier} synchronization delay and something similar. Also in this case, times are collected with various parallelism degrees.
+	\item \code{benchmark.sh}: This bash script automates the benchmarking process. It starts the program with different parallelism degrees and different input vector sizes. It executes every combination of $n$ (size of input vector) and $\mathit{nw}$ 3 times in order to then compute an average of each time. The analysis of its output is delayed to section \ref{sec:benchmark}.
+	\item \code{gprof-helper.c}: This file is needed in order to allow \code{gprof} profiling for multithreaded applications. It provides wrappers for the \code{pthread} creation.
+	\item \code{profiler.sh}: This bash script automates the profiling process. At the end of the script execution, it dumps the profiling output in a file, by starting the program with various parallelism degrees. The analysis of its output is delayed to section \ref{sec:profile}.
+	\item \code{tseq.sh}: This bash script collects some times from the program execution. In particular, it collects, for each worker, the \emph{super step} time, the \emph{barrier} synchronization delay and something similar. Also in this case, times are collected with various parallelism degrees. The analysis of its output is delayed to section \ref{sec:tseq}.
 \end{itemize}
 All the cited scripts collect data and dump them in various files, that go in the folder \code{benchmark/data/}, which gets generated by those scripts.
+
+\subsection{Collection of Partial Times}
+\label{sec:tseq}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{l|*{9}r}
+		\toprule
+		\diagbox{phase}{$\mathit{nw}$} 
+		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 \\
+		\midrule
+		ss computation \\
+		ss communication \\
+		barrier sync \\
+		\bottomrule
+	\end{tabular}%
+	\label{tab:tseq}%
+	\caption{Collections of partial times (in \SI{}{\micro \second})}
+\end{table}%
+
+\subsection{Benchmark}
+\label{sec:benchmark}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{l|*{9}r}
+		\toprule
+		\diagbox{$n$}{$\mathit{nw}$} 
+		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 \\
+		\midrule
+		$2^{20}$ \\
+		$2^{20}$ \\
+		$2^{20}$ \\
+		$2^{20}$ \\
+		$2^{20}$ \\
+		$2^{20}$ \\
+		\bottomrule
+	\end{tabular}%
+	\label{tab:benchmark}%
+	\caption{Time collected and averaged (in \SI{}{\milli \second})}
+\end{table}%
+
+
+\subsection{Profiling}
+\label{sec:profile}
 
 \subsection{Plots}
 \label{sec:plots}

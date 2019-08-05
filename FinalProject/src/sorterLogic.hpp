@@ -42,8 +42,10 @@ public:
         std::vector<long>::iterator begin, 
         std::vector<long>::iterator end): nw(num_w), elem(begin, end) {}
 
-    // split in_vector in p ranges by computing p+1 samples, and return the p+1 samples equally spaced
+    // split in_vector in p ranges by computing p+1 samples, and return 
+    // the p+1 samples equally spaced
     static std::vector<long> split_with_samples(std::vector<long> in_vector, size_t p) {
+        
         std::vector<long> tmp;
 
         auto range = in_vector.size() / (p + 1);

@@ -1,6 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
-DEBUG = -pg # not used when calling make all, but only make profile 
+PROFILE = -pg -DPROFILE
+DEBUG = -g 
 INCLUDES = -I .
 OPTFLAGS = -O3
 LDFLAGS = -pthread
@@ -15,7 +16,7 @@ INCLUDE_FILES = logicBSP.hpp \
 		queueMatrix.hpp \
 		sorterLogic.hpp
 	
-.PHONY: all clean cleanall profile tseq
+.PHONY: all clean cleanall profile tseq benchmark
 
 %: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@ $< $(LDFLAGS) 
@@ -24,7 +25,7 @@ clean:
 	rm -f $(TARGETS)
 
 cleanall: clean
-	rm -f benchmark/data/*
+	rm -rf benchmark/data
 	rm -f benchmark/gprof-helper.so
 
 all: clean
@@ -32,7 +33,13 @@ all: clean
 
 profile: clean
 	gcc -shared -fPIC benchmark/gprof-helper.c -o benchmark/gprof-helper.so -lpthread -ldl 
-	$(CXX) $(CXXFLAGS) $(DEBUG) -DPROFILE $(INCLUDES) -Os -o sorter sorter.cpp $(LDFLAGS) 
+	$(CXX) $(CXXFLAGS) $(PROFILE) $(INCLUDES) -Os -o sorter sorter.cpp $(LDFLAGS) 
+
+benchmark: clean
+	$(CXX) $(CXXFLAGS) -DBENCHMARK $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 
 
 tseq: clean
 	$(CXX) $(CXXFLAGS) -DTSEQ $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 
+
+debug: clean
+	$(CXX) $(CXXFLAGS) -DBENCHMARK $(DEBUG) $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 

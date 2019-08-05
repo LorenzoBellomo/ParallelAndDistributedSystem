@@ -6,6 +6,7 @@ if [ $# != 1 ]; then
 fi
 
 cd $1
+mkdir -p benchmark/data
 make tseq
 
 FILENAME=benchmark/data/tseq.out 
@@ -20,6 +21,7 @@ for((i=0;i<9;++i)); do # from 1 to 256 increasing by power of 2
 		./sorter 3000000 $NW 123 >> $FILENAME
 	done
 	echo "===============================================" >> $FILENAME
+	NW=$((NW * 2))
 done
 
 echo "output written to $FILENAME"

@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    long n = atoi(argv[1]);
+    size_t n = atoi(argv[1]);
     size_t nw = atoi(argv[2]);
     int seed = (argc == 4)? atoi(argv[3]) : time(NULL);
 
@@ -36,21 +36,19 @@ int main(int argc, char *argv[]) {
         std::cerr << "need at least one worker" << std::endl;
         return -1;
     }
-    if(n <= 0) {
+    if(n <= 0 || n < nw) {
         std::cerr << "invalid vector size" << std::endl;
         return -1;
     }
 
     // Generate random unique vector (size n) with elements in range [0, 5*n)
-    // the time needed to generate the input vector is not kept while performing the measurements
+    // the time needed to generate the input vector is not considered for measures 
     std::vector<long> in_tasks;
     std::vector<long> std_sort;
     std::vector<long> out_tasks(n);
-    for(long i = 0; i < n*5; i++)
+    for(size_t i = 0; i < n; i++)
         in_tasks.push_back(i);
     std::shuffle(in_tasks.begin(), in_tasks.end(), std::default_random_engine(seed));
-    in_tasks.erase(in_tasks.begin() + n, in_tasks.end());
-    std_sort = in_tasks;
 
     {
         utimer timer("Posix version");
@@ -79,10 +77,12 @@ int main(int argc, char *argv[]) {
 #endif
     }
 
+#ifndef BENCHMARK
     {
         utimer timer("std::sort");
-        std::sort(std_sort.begin(), std_sort.end());
+        std::sort(in_tasks.begin(), in_tasks.end());
     }
+#endif
 
     return 0;
 }

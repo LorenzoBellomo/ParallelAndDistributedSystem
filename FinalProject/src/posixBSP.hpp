@@ -20,6 +20,7 @@
 
 #ifdef TSEQ
 #include <map>
+#include <mutex>
 #include <sstream>
 #include <string>
 #endif
@@ -32,12 +33,6 @@ private:
     typedef std::shared_ptr<safe_queue<T>> ss_queue;
     typedef std::function<void(ss_queue, size_t, std::vector<ss_queue>)> ss_function;
 
-#ifdef TSEQ
-    // collection of partial times
-    std::map<std::string, long> time_map;
-    std::stringstream ss;
-#endif
-
     std::vector<logicBSP<T>*> logic; // vector of workers, passed by user
     // global_ss is only updated at the end of all the super steps
     size_t nw, ss_count, global_ss, global_end_next_ss;
@@ -47,6 +42,12 @@ private:
                                 // end_barrier is used to make the global end check
     bool global_end;    // used to syncronize workers and tell them if the BSP is over or not
     std::function<bool(std::vector<logicBSP<T>*>)> termination_condition;
+
+#ifdef TSEQ
+    // collection of partial times
+    std::map<std::string, long> time_map;
+    std::mutex time_map_mutex;
+#endif
 
 
     // force a given std::thread to be executed on one of the thread contexts available
@@ -71,6 +72,10 @@ private:
         bool end = false; // end is true if the global condition is true
         logicBSP<T> *my_logic = logic[worker_idx]; // handler to the worker of index worker_idx
 
+#ifdef TSEQ
+        std::stringstream ss;
+#endif
+
 #ifndef PROFILE
         // for some reason thread sticking doesn't work with gprof
         if(stick)
@@ -84,7 +89,7 @@ private:
             ss_queue my_queue = matrix.get_queue(current_ss, worker_idx);
             std::vector<ss_queue> next_queues = (current_ss < ss_count - 1)? 
                 matrix.get_ss_queues(current_ss + 1) : 
-                matrix.get_ss_queues(global_end_next_ss()); // if I'm at the end then I want the next queue
+                matrix.get_ss_queues(global_end_next_ss); // if I'm at the end then I want the next queue
                                                             // from the super step the BSP loop restarts to
                     
             auto ss_funct = my_logic->switcher(current_ss);
@@ -94,7 +99,10 @@ private:
             ss.str(""); // save time of super step (both communication and computation)
             ss.clear();
             ss << "super step " << current_ss << " worker " << worker_idx;
-            time_map.insert({ss.str(), utimer::elapsed(start)});
+            {
+                std::unique_lock<std::mutex> lock(time_map_mutex);
+                time_map.insert({ss.str(), utimer::elapsed(start)});
+            }
             start = std::chrono::system_clock::now();
 #endif
 
@@ -104,7 +112,10 @@ private:
             ss.str("");
             ss.clear();
             ss << "barrier " << current_ss << " worker " << worker_idx;
-            time_map.insert({ss.str(), utimer::elapsed(start)});
+            {
+                std::unique_lock<std::mutex> lock(time_map_mutex);
+                time_map.insert({ss.str(), utimer::elapsed(start)});
+            }
             start = std::chrono::system_clock::now();
 #endif
 
@@ -120,7 +131,10 @@ private:
                 ss.str("");
                 ss.clear();
                 ss << "end worker " << worker_idx;
-                time_map.insert({ss.str(), utimer::elapsed(start)});
+                {
+                    std::unique_lock<std::mutex> lock(time_map_mutex);
+                    time_map.insert({ss.str(), utimer::elapsed(start)});
+                }
                 start = std::chrono::system_clock::now();
 #endif
             }
@@ -132,23 +146,21 @@ public:
 
     // constructor (vector of workers, parallelism degree, number of super steps)
     posixBSP(const std::vector<logicBSP<T>*>& _logic, size_t num_w, size_t num_ss): 
-        logic(_logic), nw(num_w), ss_count(num_ss), matrix(num_ss, num_w), 
-        barr(num_w), end_barrier(nw+1), global_end(false), global_end_next_ss(0)
+        logic(_logic), nw(num_w), ss_count(num_ss), global_end_next_ss(0),
+        matrix(num_ss, num_w), barr(num_w), end_barrier(nw+1), global_end(false)
     // end barrier waits nw+1 threads because the main too (the one that calls start_and_wait)
     // waits there, and computes at the end  the global continuation condition
     {
-        termination_condition = [] (bool(std::vector<logicBSP<T>*>) workers) {
+        termination_condition = [](std::vector<logicBSP<T>*> workers) {
             return true;
-        }
+        };
     }
 
 
     void start_and_wait() {
         // check if the
-        unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
-        bool stick = ((concurentThreadsSupported >= nw) || (concurentThreadsSupported == 0));
-        if(concurrentThreadsSupported == 0) 
-            std::cout << "Weird" << std::endl;
+        unsigned concurrentThreadsSupported = std::thread::hardware_concurrency();
+        bool stick = ((concurrentThreadsSupported >= nw) || (concurrentThreadsSupported == 0));
 
         for(size_t i = 0; i < nw; i++) 
             thds.push_back(std::thread(&posixBSP<T>::worker, this, i, stick));
@@ -157,10 +169,10 @@ public:
             // I wait for all super steps to end
             end_barrier.barrier_wait();
             // at this point I compute the global end condition
-            if(global_end_condition(logic))
+            if(termination_condition(logic))
                 global_end = true;
             else 
-                global_ss = global_end_next_ss();
+                global_ss = global_end_next_ss;
             end_barrier.barrier_wait();
             // and I notify to all the workers now
         }

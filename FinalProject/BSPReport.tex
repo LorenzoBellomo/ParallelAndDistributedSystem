@@ -120,7 +120,14 @@ This way, every worker keeps its own local state, which survives every super ste
 \label{sec:eval}
 Benchmark data were collected with the provided scripts in the \code{benchmark} folder (see section \ref{sec:benchFold}), while the data were gathered and displayed in section \ref{sec:plots}. \\
 The test have been made on the \emph{Xeon Phi} and the results shown refer exclusively to data collected on that machine. \\
-The project was compiled with \code{g++} version \code{7.4.0} provided on the machine, and with the options provided in the \code{makefile}.
+The project was compiled with \code{g++} version \code{7.4.0} provided on the machine, and with the options provided in the \code{makefile}. \\
+The program can be compiled with different preprocessor \code{define} in order to change a bit the behaviour of the programs. The possibilities are listed below (and are used in the \code{makefile} for various rules):
+\begin{itemize}
+	\item \code{DEBUG}: (used in rule \code{make debug}) it activates the flag \code{-g} useful for debugging with \code{gdb}, and it checks that the output vector is equal to the one computed using \code{std::sort}.
+	\item \code{BENCHMARK}: (used in rule \code{make benchmark}) it skips computing the \code{std::sort}, and only sorts the input array via the \emph{Tiskin} algorithm.
+	\item \code{TSEQ}: (used in rule \code{make tseq}) this signals that the user wants to collect some partial execution data (like the synchronization time, the super step time and so on). In this case the final time is higher due to the collection of partial times overhead.
+	\item \code{PROFILE}: (used in rule \code{make profile}) it simply sets a flag that does not allow thread sticking, since this interferes with the profiling process.
+\end{itemize}
 
 \subsection{Benchmark Folder}
 \label{sec:benchFold}

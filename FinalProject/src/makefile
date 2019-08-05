@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
-PROFILE = -pg -DPROFILE
-DEBUG = -g 
+PROFILE = -pg -DPROFILE # only used in make profile
+DEBUG = -g # only used in make debug
 INCLUDES = -I .
 OPTFLAGS = -O3
 LDFLAGS = -pthread
@@ -16,7 +16,7 @@ INCLUDE_FILES = logicBSP.hpp \
 		queueMatrix.hpp \
 		sorterLogic.hpp
 	
-.PHONY: all clean cleanall profile tseq benchmark
+.PHONY: all clean cleanall profile tseq benchmark debug
 
 %: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@ $< $(LDFLAGS) 

@@ -53,11 +53,11 @@ public:
         auto prev = in_vector.begin();
         for(size_t i = 0; i < extra; i++) {
             tmp.push_back(*prev);
-            prev += (range + 2);
+            prev += (range + 1);
         }
         for(size_t i = 0; i < p - extra; i++) {
             tmp.push_back(*prev);
-            prev += range + 1;
+            prev += range;
         }
         tmp.push_back(*(in_vector.end() - 1));
 
@@ -70,11 +70,12 @@ public:
         std::vector<logicBSP::ss_queue> next_queues)
     {
 #ifdef TSEQ
-            auto start = std::chrono::system_clock::now();
+        auto start = std::chrono::system_clock::now();
 #endif
         std::sort(elem.begin(), elem.end());
 
         samples = split_with_samples(elem, nw);
+        
 #ifdef TSEQ
         ss.str("");
         ss.clear();
@@ -205,6 +206,11 @@ public:
             std::cout << e.first << " -> " << e.second << " usec" << std::endl;
     }
 #endif
+
+    void push_to_output_vector(std::vector<long>& out_v) {
+        for(auto e : output_v)
+            out_v.push_back(e);
+    }
 
 };
 

@@ -42,4 +42,4 @@ tseq: clean
 	$(CXX) $(CXXFLAGS) -DTSEQ $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 
 
 debug: clean
-	$(CXX) $(CXXFLAGS) -DBENCHMARK $(DEBUG) $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 
+	$(CXX) $(CXXFLAGS) -DDEBUG $(DEBUG) $(INCLUDES) -o sorter sorter.cpp $(LDFLAGS) 

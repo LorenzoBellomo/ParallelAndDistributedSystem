@@ -50,10 +50,10 @@ int main(int argc, char *argv[]) {
         in_tasks.push_back(i);
     std::shuffle(in_tasks.begin(), in_tasks.end(), std::default_random_engine(seed));
 
+    std::vector<logicBSP<long>*> workers;
+
     {
         utimer timer("Posix version");
-
-        std::vector<logicBSP<long>*> workers;
 
         // split input data between workers
         auto range = in_tasks.size() / nw;
@@ -82,6 +82,18 @@ int main(int argc, char *argv[]) {
         utimer timer("std::sort");
         std::sort(in_tasks.begin(), in_tasks.end());
     }
+#endif
+
+#ifdef DEBUG
+    std::vector<long> check_vec;
+    for(auto l : workers) {
+        sorter_worker *ptr = dynamic_cast<sorter_worker*>(l);
+        ptr->push_to_output_vector(check_vec);
+    }
+    (check_vec == in_tasks)? 
+        std::cout << "vectors are equal" << std::endl:
+        std::cout << "vectors differ" << std::endl;
+
 #endif
 
     return 0;

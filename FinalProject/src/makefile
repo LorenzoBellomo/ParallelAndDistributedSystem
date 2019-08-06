@@ -26,6 +26,7 @@ clean:
 
 cleanall: clean
 	rm -rf benchmark/data
+	rm -f gmon.out
 	rm -f benchmark/gprof-helper.so
 
 all: clean
@@ -33,7 +34,7 @@ all: clean
 
 profile: clean
 	gcc -shared -fPIC benchmark/gprof-helper.c -o benchmark/gprof-helper.so -lpthread -ldl 
-	$(CXX) $(CXXFLAGS) $(PROFILE) $(INCLUDES) -Os -o sorter sorter.cpp $(LDFLAGS) 
+	$(CXX) $(CXXFLAGS) $(PROFILE) $(INCLUDES) -o sorter sorter.cpp $(LDFLAGS) 
 
 benchmark: clean
 	$(CXX) $(CXXFLAGS) -DBENCHMARK $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 

@@ -32,10 +32,10 @@ LD_PRELOAD=benchmark/gprof-helper.so ./sorter 3000000 8 123 >> $FILENAME
 gprof sorter >> $FILENAME
 echo "===============================================" >> $FILENAME
 
-echo "executing program with 256 workers"
-echo "3000000 items, 256 workers" >> $FILENAME
+echo "executing program with 128 workers"
+echo "3000000 items, 128 workers" >> $FILENAME
 echo "===============================================" >> $FILENAME
-LD_PRELOAD=benchmark/gprof-helper.so ./sorter 3000000 256 123 >> $FILENAME
+LD_PRELOAD=benchmark/gprof-helper.so ./sorter 3000000 128 123 >> $FILENAME
 gprof sorter >> $FILENAME
 echo "===============================================" >> $FILENAME
 

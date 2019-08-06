@@ -62,8 +62,7 @@ In order to theoretically model the performances of a BSP algorithm some values 
 	\item $m_i$ is the number of maximum messages receiver by the \emph{i-th} worker.
 	\item $c$ is the cost of sending or receiving one message.
 	\item $B$ is the cost of the synchronization step (\emph{barrier}).
-	\item $I$ is the initialization process cost.
-	\item $F$ is the finalization process cost
+	\item $I$ and $F$ are relatively the initialization and finalization cost. Their value is application specific.
 \end{itemize}
 The cost of a super step ($\mathit{SS}$) can be approximated (upper bounded) as follows:
 $$ \mathit{SS}_j = \max_{i=1}^{\mathit{nw}} w_i + \max_{i=1}^{\mathit{nw}} c m_i + B $$
@@ -106,7 +105,7 @@ As explained, one thread executes the code of one worker (which may comprise mor
 \label{sec:business}
 In order to write code that can be fed to the provided BSP implementation, one has to subclass \code{logicBSP}. This is an interface that models a generic worker (see \code{sorterLogic.hpp} for an example). \\
 One has to provide the code of the worker's \emph{super steps} (every worker has its own local state) and it must provide a switcher function that maps every function to a super step number. \\
-The code of a generic super step has to be a function with this signature: 
+The code of a generic super step has to be a function with this signature (except for the function name, which might vary): 
 \begin{figure}[H]
 	\centering
 	\begin{minipage}{0.9\textwidth}		
@@ -142,6 +141,13 @@ All the cited scripts collect data and dump them in various files, that go in th
 
 \subsection{Collection of Partial Times}
 \label{sec:tseq}
+In table \ref{tab:tseq} some partial times collected are shown. All the times are expressed in microseconds and are the result of an average between multiple runs.\\
+The labels shown are described below:
+\begin{itemize}
+	\item \emph{ss computation}: it is an average of the time spent by a generic super step (average of the three) in computation phase.
+	\item \emph{ss communication}: same thing but related to communications.
+	\item \emph{barrier sync}: time spent by a generic super step waiting for all the workers to end their local computation and their communication. This is the value with the highest \emph{variance}.
+\end{itemize}
 \begin{table}[H]
 	\centering
 	\begin{tabular}{l|*{9}r}
@@ -154,37 +160,41 @@ All the cited scripts collect data and dump them in various files, that go in th
 		barrier sync \\
 		\bottomrule
 	\end{tabular}%
-	\label{tab:tseq}%
 	\caption{Collections of partial times (in \SI{}{\micro \second})}
+	\label{tab:tseq}%
 \end{table}%
 
 \subsection{Benchmark}
 \label{sec:benchmark}
+The raw data collected through the \code{benchmark.sh} script are shown in table \ref{tab:benchmark}. The time is shown in milliseconds, and it is the result of an average of multiple runs.
 \begin{table}[H]
 	\centering
-	\begin{tabular}{l|*{9}r}
+	\begin{tabular}{l|*{10}r}
 		\toprule
 		\diagbox{$n$}{$\mathit{nw}$} 
-		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 \\
+		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 & std::sort \\
 		\midrule
 		$2^{20}$ \\
-		$2^{20}$ \\
-		$2^{20}$ \\
-		$2^{20}$ \\
-		$2^{20}$ \\
-		$2^{20}$ \\
+		$2^{21}$ \\
+		$2^{22}$ \\
+		$2^{23}$ \\
+		$2^{24}$ \\
+		$2^{25}$ \\
 		\bottomrule
 	\end{tabular}%
-	\label{tab:benchmark}%
 	\caption{Time collected and averaged (in \SI{}{\milli \second})}
+	\label{tab:benchmark}
 \end{table}%
+Some plots related to those data are shown in section \ref{sec:plots}.
 
 
 \subsection{Profiling}
 \label{sec:profile}
+According to \code{gprof}, the most time consuming operations are 
 
 \subsection{Plots}
 \label{sec:plots}
+In this section some plots related to data generated with the script \code{benchmark.sh} are shown.
 
 \section{Conclusions}
 \label{sec:conclusion}

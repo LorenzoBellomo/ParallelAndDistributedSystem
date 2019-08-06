@@ -38,7 +38,7 @@ for((j=0;j<7;++j)); do # from 2^20 to 2^26 increasing by power of 2
     echo "N = $N"
     TMP=$((j+20))
     echo "N = $N (2^$TMP)" >> $FILENAME
-    for((z=0;z<3;++z)); do
+    for((z=0;z<5;++z)); do
         ./sorter $N 64 123 >> $FILENAME
     done
     N=$((N * 2))

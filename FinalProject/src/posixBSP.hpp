@@ -64,9 +64,8 @@ private:
         }
     }
 
-    // worker loop, it takes a worker id (in range [0, nw)) and a boolean which is 
-    // true if the program has to try and stick one worker per core, and false otherwise
-    void worker(size_t worker_idx, bool stick) {
+    // worker loop, it takes a worker id (in range [0, nw))
+    void worker(size_t worker_idx) {
 
         size_t current_ss = 0; // local view of current super step
         bool end = false; // end is true if the global condition is true
@@ -74,12 +73,6 @@ private:
 
 #ifdef TSEQ
         std::stringstream ss;
-#endif
-
-#ifndef PROFILE
-        // for some reason thread sticking doesn't work with gprof
-        if(stick)
-            try_stick_current_thread(&thds[worker_idx], worker_idx);
 #endif
 
         while(!end) {
@@ -158,12 +151,9 @@ public:
 
 
     void start_and_wait() {
-        // check if the
-        unsigned concurrentThreadsSupported = std::thread::hardware_concurrency();
-        bool stick = ((concurrentThreadsSupported >= nw) || (concurrentThreadsSupported == 0));
 
         for(size_t i = 0; i < nw; i++) 
-            thds.push_back(std::thread(&posixBSP<T>::worker, this, i, stick));
+            thds.push_back(std::thread(&posixBSP<T>::worker, this, i));
 
         while(!global_end) {
             // I wait for all super steps to end

@@ -97,7 +97,6 @@ The queue implementation is a modification of the one provided during classes. T
 
 \subsection{Threads}
 The code of the threads is a private function (\code{worker}) in file \code{posixBSP.hpp}. \\
-It should be noted that the program tries to stick the worker threads to one core in increasing order (thread 0 to core 0, thread 1 to core 1\dots) with \code{pthread\_setaffinity\_np}. If this process fails then the computation goes on without sticking the threads to cores. \\
 As explained, one thread executes the code of one worker (which may comprise more super steps), so in total only $\mathit{nw}$ threads are spawned by the runtime.
 
 
@@ -125,7 +124,6 @@ The program can be compiled with different preprocessor \code{define} in order t
 	\item \code{DEBUG}: (used in rule \code{make debug}) it activates the flag \code{-g} useful for debugging with \code{gdb}, and it checks that the output vector is equal to the one computed using \code{std::sort}.
 	\item \code{BENCHMARK}: (used in rule \code{make benchmark}) it skips computing the \code{std::sort}, and only sorts the input array via the \emph{Tiskin} algorithm.
 	\item \code{TSEQ}: (used in rule \code{make tseq}) this signals that the user wants to collect some partial execution data (like the synchronization time, the super step time and so on). In this case the final time is higher due to the collection of partial times overhead.
-	\item \code{PROFILE}: (used in rule \code{make profile}) it simply sets a flag that does not allow thread sticking, since this interferes with the profiling process.
 \end{itemize}
 
 \subsection{Benchmark Folder}

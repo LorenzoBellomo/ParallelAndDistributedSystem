@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
-PROFILE = -pg -DPROFILE # only used in make profile
-DEBUG = -g # only used in make debug
+PROFILE = -pg # only used in make profile
+DEBUG = -g -DDEBUG # only used in make debug
 INCLUDES = -I .
 OPTFLAGS = -O3
 LDFLAGS = -pthread
@@ -43,4 +43,4 @@ tseq: clean
 	$(CXX) $(CXXFLAGS) -DTSEQ $(INCLUDES) $(OPTFLAGS) -o sorter sorter.cpp $(LDFLAGS) 
 
 debug: clean
-	$(CXX) $(CXXFLAGS) -DDEBUG $(DEBUG) $(INCLUDES) -o sorter sorter.cpp $(LDFLAGS) 
+	$(CXX) $(CXXFLAGS) $(DEBUG) $(INCLUDES) -o sorter sorter.cpp $(LDFLAGS) 

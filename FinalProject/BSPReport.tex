@@ -4,6 +4,7 @@
 \usepackage[a4paper,top=3cm,bottom=4cm,left=3.5cm,right=3.5cm]{geometry}
 \usepackage[font=footnotesize,labelfont={sf,bf}]{caption}
 \usepackage{graphicx}
+\usepackage{subfig}
 \usepackage{float}
 \usepackage{lmodern}
 \usepackage{diagbox}
@@ -139,12 +140,14 @@ All the cited scripts collect data and dump them in various files, that go in th
 
 \subsection{Collection of Partial Times}
 \label{sec:tseq}
-In table \ref{tab:tseq} some partial times collected are shown. All the times are expressed in microseconds and are the result of an average between multiple runs.\\
+In table \ref{tab:tseq} some partial times collected are shown. All the times are expressed in microseconds and are the result of an average between multiple runs. All the runs have been executed with $3\,000\,000$ items ($2^{20} < 3M < 2^{21}$) as an input size.\\ 
 The labels shown are described below:
 \begin{itemize}
 	\item \emph{ss computation}: it is an average of the time spent by a generic super step (average of the three) in computation phase.
 	\item \emph{ss communication}: same thing but related to communications.
 	\item \emph{barrier sync}: time spent by a generic super step waiting for all the workers to end their local computation and their communication. This is the value with the highest \emph{variance}.
+	\item \emph{end process}: time spent by a generic worker waiting for the final synchronization, needed to assert the validity of the global continuation clause.
+	\item \emph{whole ss}: time spent by a generic worker in a generic super step (both communication and computation phase, but no synchronization).
 \end{itemize}
 \begin{table}[H]
 	\centering
@@ -153,24 +156,26 @@ The labels shown are described below:
 		\diagbox{phase}{$\mathit{nw}$} 
 		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 \\
 		\midrule
-		ss computation \\
-		ss communication \\
-		barrier sync \\
+		barrier sync & 9 & 54 & 25 & 18 & 10 & 8 & 10 & 15 & 95 \\
+		communication & 21 & 11 & 10 & 7 & 5 & 7 & 17 & 7 & 216 \\
+		computation & 279 & 243 & 86 & 44 & 24 & 15 & 17 & 42 & 167 \\
+		whole ss & 293 & 250 & 93 & 49 & 28 & 20 & 29 & 47 & 316 \\
+		end process & 0 & 0 & 1 & 1 & 1 & 3 & 7 & 16 & 46 \\
 		\bottomrule
 	\end{tabular}%
-	\caption{Collections of partial times (in \SI{}{\micro \second})}
+	\caption{Collections of partial times (in \SI{}{\milli \second})}
 	\label{tab:tseq}%
 \end{table}%
 
 \subsection{Benchmark}
 \label{sec:benchmark}
-The raw data collected through the \code{benchmark.sh} script are shown in table \ref{tab:benchmark}. The time is shown in milliseconds, and it is the result of an average of multiple runs.
+The raw data collected through the \code{benchmark.sh} script are shown in table \ref{tab:benchmark}. The time is shown in milliseconds, and it is the result of an average of multiple runs. The last column refers to the times collected using \code{std::sort}.
 \begin{table}[H]
 	\centering
 	\begin{tabular}{l|*{10}r}
 		\toprule
 		\diagbox{$n$}{$\mathit{nw}$} 
-		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 & std::sort \\
+		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 & \code{std::sort} \\
 		\midrule
 		$2^{20}$ & 294 & 306 & 146 & 86 & 64 & 66 & 113 & 336 & 2\,684 & 186 \\
 		$2^{21}$ & 595 & 645 & 258 & 161 & 112 & 96 & 144 & 343  & 2\,675 & 392 \\
@@ -191,11 +196,52 @@ Some plots related to those data are shown in section \ref{sec:plots}.
 
 \subsection{Profiling}
 \label{sec:profile}
-According to \code{gprof}, the most time consuming operations are 
+According to \code{gprof}, the most time is spent iterating between elements of a vector. This is also due to the fact that a lot of time is spent in generating the input vector, and as the size grows of the input grows this time gets longer and longer. \\
+That said, the most time consuming operations used by the workers, excluding the time spent iterating between elements, which is hard to monitor, are the queue related ones.
+Around 2\% of the time is spent either pushing or popping from queues. \\
+The longest super step is super step 2, which accounts for more than double the time spent in super steps 1 and 3.\\
+The time spent locking and synchronizing around a barrier instead results negligible. \\
+In order to execute again this evaluation, use the script \code{profile.sh}.
 
 \subsection{Plots}
 \label{sec:plots}
-In this section some plots related to data generated with the script \code{benchmark.sh} are shown.
+In this section some plots related to data generated with the script \code{benchmark.sh} are shown. The data shown always show 2 lines. One line refers to the maximum size input ($2^{27}$), while the other refers to an average of the provided input sizes (so $2^i$ for $i = 20, \dots, 27$).
+
+\subsubsection{Execution Time}
+\begin{figure}[H]
+	\subfloat{{\includegraphics[width=0.50\linewidth]{execution1} }}
+	\qquad
+	\subfloat{{\includegraphics[width=0.50\linewidth]{execution2} }}%
+	\caption{Execution time with max input size vs the average. (in \SI{}{\micro \second})}
+	\label{fig:execution}
+\end{figure}
+
+\subsubsection{Speedup}
+The \emph{speedup} is computed as $s(p) = T_{seq}/T_{par}(p)$. The best sequential time $T_{seq}$ taken as reference is the one obtained using \code{std::sort}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\linewidth]{speedup}
+	\caption{BSP structure}
+	\label{fig:speedup}
+\end{figure}
+
+\subsubsection{Scalability}
+The \emph{scalability} is computed as $\mathit{scalab}(p) = T_{par}(1)/T_{par}(p)$
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\linewidth]{scalability}
+	\caption{BSP structure}
+	\label{fig:scalab}
+\end{figure}
+
+\subsubsection{Efficiency}
+The \emph{efficiency} is computed as $\epsilon(p) = T_{seq}/(pT_{par}(p))$
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\linewidth]{efficiency}
+	\caption{BSP structure}
+	\label{fig:effic}
+\end{figure}
 
 \section{Conclusions}
 \label{sec:conclusion}

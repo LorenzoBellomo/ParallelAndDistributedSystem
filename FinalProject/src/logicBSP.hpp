@@ -34,7 +34,7 @@ public:
     // if TSEQ is defined then the owner wants to collect some partial times. If the application
     // writer also wants to collect some times and display them to the stdout, then this function 
     // makes it possible, by default it does nothing
-    void dump_tseq() {}
+    virtual void dump_tseq() = 0;
 #endif
 
 };

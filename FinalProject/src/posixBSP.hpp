@@ -181,7 +181,6 @@ public:
     void dump_tseq() {
 
 #ifdef TSEQ
-        std::map<std::string, long>::iterator begin, end;
         for(auto l : logic) 
             l->dump_tseq();
         

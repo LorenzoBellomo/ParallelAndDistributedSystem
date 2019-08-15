@@ -191,6 +191,10 @@ The raw data collected through the \code{benchmark.sh} script are shown in table
 	\caption{Time collected and averaged (in \SI{}{\milli \second})}
 	\label{tab:benchmark}
 \end{table}%
+From a quick view, it is possible to notice that for a parallelism degree of 1 and 2, the running time is comparable. This seems to be due to the fact (according to the data collected with script \code{tseq.sh}) that, while super step 1 correctly "halves" its completion time on average, the third one increases a lot in running time. This is normal since super step 3 with 1 worker doesn't require queues and message passing, while the same cannot be said for 2 workers. \\
+In addition to this, it is also possible to notice that (as it should be safe to assume), increasing the input size, the program scales better. \\
+The program seems to scale well up until nw = 32 (with the exception of nw = 2). \\
+When nw = 64, the program scales only for bigger input sizes (and by extension it is safe to assume that the same behaviour applies to nw = 128). For nw = 256 instead the overhead is huge. \\
 Some plots related to those data are shown in section \ref{sec:plots}.
 
 
@@ -209,6 +213,7 @@ In this section some plots related to data generated with the script \code{bench
 Data are usually shown for the highest input size ($2^{27}$) and for an average on the used input sizes (for each $ 2^i, i \in [20,27]$).
 
 \subsubsection{Completion Time}
+In figure \ref{fig:execution} the completion time is shown on the left for an input size of $2^{27}$, while on the right the average is shown. The crossing line is the time spent with \code{std::sort}. 
 \begin{figure}[H]
 	\subfloat{{\includegraphics[width=0.50\linewidth]{execution1} }}
 	\qquad

@@ -44,11 +44,17 @@ int main(int argc, char *argv[]) {
     // Generate random unique vector (size n) with elements in range [0, 5*n)
     // the time needed to generate the input vector is not considered for measures 
     std::vector<long> in_tasks;
-    std::vector<long> std_sort;
     std::vector<long> out_tasks(n);
-    for(size_t i = 0; i < n; i++)
-        in_tasks.push_back(i);
-    std::shuffle(in_tasks.begin(), in_tasks.end(), std::default_random_engine(seed));
+
+    std::cout << "Start generating input vector" << std::endl;
+
+    {
+        utimer timer("Generating input vector");
+
+        for(size_t i = 0; i < n; i++)
+            in_tasks.push_back(i);
+        std::shuffle(in_tasks.begin(), in_tasks.end(), std::default_random_engine(seed));
+    }
 
     std::vector<logicBSP<long>*> workers;
 

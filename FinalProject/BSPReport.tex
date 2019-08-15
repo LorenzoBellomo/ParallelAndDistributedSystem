@@ -94,7 +94,7 @@ All the source code files are under directory \emph{src} and are provided under 
 
 \subsection{Communications}
 \label{sec:queue}
-The queue implementation is a modification of the one provided during classes. The main difference is that writes to the queue are synchronized, while reads are not. \\ This is made possible by the fact that reads are always performed after a barrier, which makes the synchronization implicit. Writes have to be executed in mutual exclusion because multiple producers may potentially write together. In order to reduce the synchronization overhead, it is suggested to use the method \code{push\_multiple(iterator, iterator)}, in order to lock once the queue and then release it immediately.
+The \emph{queue} implementation is a modification of the one provided during classes. The main difference is that \emph{writes} to the queue are synchronized, while \emph{reads} are not. \\ This is made possible by the fact that reads are always performed after a barrier, which makes the synchronization implicit. Writes have to be executed in \emph{mutual exclusion} because multiple producers may potentially write together. In order to reduce the synchronization overhead, it is suggested to use the method \code{push\_multiple(iterator, iterator)}, in order to lock once the queue and then release it immediately.
 
 \subsection{Threads}
 The code of the threads is a private function (\code{worker}) in file \code{posixBSP.hpp}. \\
@@ -157,8 +157,8 @@ The labels shown are described below:
 		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 \\
 		\midrule
 		barrier sync & 9 & 54 & 25 & 18 & 10 & 8 & 10 & 15 & 95 \\
-		communication & 21 & 11 & 10 & 7 & 5 & 7 & 17 & 7 & 216 \\
-		computation & 279 & 243 & 86 & 44 & 24 & 15 & 17 & 42 & 167 \\
+		communication & 0 & 11 & 10 & 7 & 5 & 7 & 17 & 7 & 216 \\
+		computation & 300 & 243 & 86 & 44 & 24 & 15 & 17 & 42 & 167 \\
 		whole ss & 293 & 250 & 93 & 49 & 28 & 20 & 29 & 47 & 316 \\
 		end process & 0 & 0 & 1 & 1 & 1 & 3 & 7 & 16 & 46 \\
 		\bottomrule
@@ -196,23 +196,24 @@ Some plots related to those data are shown in section \ref{sec:plots}.
 
 \subsection{Profiling}
 \label{sec:profile}
-According to \code{gprof}, the most time is spent iterating between elements of a vector. This is also due to the fact that a lot of time is spent in generating the input vector, and as the size grows of the input grows this time gets longer and longer. \\
-That said, the most time consuming operations used by the workers, excluding the time spent iterating between elements, which is hard to monitor, are the queue related ones.
-Around 2\% of the time is spent either pushing or popping from queues. \\
+According to \code{gprof}, the most time is spent iterating between elements of a vector. This is also due to the fact that a lot of time is spent in \emph{generating} the input vector, and as the size grows of the input grows this time gets longer and longer. \\
+That said, the most time consuming operations used by the workers, excluding the time spent iterating between elements, which is hard to monitor, are the \emph{queue} related ones.
+Around 2\% of the time is spent either \emph{pushing} or \emph{popping} from queues. \\
 The longest super step is super step 2, which accounts for more than double the time spent in super steps 1 and 3.\\
-The time spent locking and synchronizing around a barrier instead results negligible. \\
+The time spent locking and synchronizing around a barrier instead results \emph{negligible}. \\
 In order to execute again this evaluation, use the script \code{profile.sh}.
 
 \subsection{Plots}
 \label{sec:plots}
-In this section some plots related to data generated with the script \code{benchmark.sh} are shown. The data shown always show 2 lines. One line refers to the maximum size input ($2^{27}$), while the other refers to an average of the provided input sizes (so $2^i$ for $i = 20, \dots, 27$).
+In this section some plots related to data generated with the script \code{benchmark.sh} are shown.\\
+Data are usually shown for the highest input size ($2^{27}$) and for an average on the used input sizes (for each $ 2^i, i \in [20,27]$).
 
-\subsubsection{Execution Time}
+\subsubsection{Completion Time}
 \begin{figure}[H]
 	\subfloat{{\includegraphics[width=0.50\linewidth]{execution1} }}
 	\qquad
 	\subfloat{{\includegraphics[width=0.50\linewidth]{execution2} }}%
-	\caption{Execution time with max input size vs the average. (in \SI{}{\micro \second})}
+	\caption{Completion time with max input size vs the average. (in \SI{}{\micro \second})}
 	\label{fig:execution}
 \end{figure}
 
@@ -221,7 +222,7 @@ The \emph{speedup} is computed as $s(p) = T_{seq}/T_{par}(p)$. The best sequenti
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\linewidth]{speedup}
-	\caption{BSP structure}
+	\caption{Speedup ($s(p) = T_{seq}/T_{par}(p)$)}
 	\label{fig:speedup}
 \end{figure}
 
@@ -230,7 +231,7 @@ The \emph{scalability} is computed as $\mathit{scalab}(p) = T_{par}(1)/T_{par}(p
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\linewidth]{scalability}
-	\caption{BSP structure}
+	\caption{Scalability ($\mathit{scalab}(p) = T_{par}(1)/T_{par}(p)$)}
 	\label{fig:scalab}
 \end{figure}
 
@@ -239,7 +240,7 @@ The \emph{efficiency} is computed as $\epsilon(p) = T_{seq}/(pT_{par}(p))$
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\linewidth]{efficiency}
-	\caption{BSP structure}
+	\caption{Efficiency ($\epsilon(p) = T_{seq}/(pT_{par}(p))$)}
 	\label{fig:effic}
 \end{figure}
 

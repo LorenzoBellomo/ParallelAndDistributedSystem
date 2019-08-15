@@ -114,6 +114,27 @@ public:
         std::sort(samples.begin(), samples.end());
 
         std::vector<long> separators = split_with_samples(samples, nw);
+    
+        // below is just a linear algorithm (O(size(elem))) to split the elements of elem
+        // between the output queues according to the separators
+        std::vector<std::vector<long>> tmp(next_queues.size());
+        auto elem_iter = elem.begin();
+        auto separator_iter = separators.begin(); 
+        for(size_t i = 0; i < next_queues.size(); i++) {
+            long next_separator = *(separator_iter+1);
+            auto q = next_queues[i];
+            while(*elem_iter < next_separator && elem_iter != elem.end()) {
+                if(worker_idx == i) // I do not put them in the queue
+                    output_v.push_back(*elem_iter);
+                else 
+                    tmp[i].push_back(*elem_iter); 
+                // I store in a tmp vector and send it all later to lock the queue only once
+                elem_iter++;
+            }
+            separator_iter++;
+        }
+        if(worker_idx == nw-1) // the last worker misses the last separator with the provided algorithm
+            output_v.push_back(separators[nw]);
 
 #ifdef TSEQ
         ss.str("");
@@ -122,29 +143,13 @@ public:
         tseq_map.insert({ss.str(), utimer::elapsed(start)});
         start = std::chrono::system_clock::now();
 #endif
-    
-        // below is just a linear algorithm (O(size(elem))) to split the elements of elem
-        // between the output queues according to the separators
-        auto elem_iter = elem.begin();
-        auto separator_iter = separators.begin(); 
+
+        // now communication phase, in tmp[i] I have the elements to send to queue i
         for(size_t i = 0; i < next_queues.size(); i++) {
-            long next_separator = *(separator_iter+1);
             auto q = next_queues[i];
-            std::vector<long> tmp;
-            while(*elem_iter < next_separator && elem_iter != elem.end()) {
-                if(worker_idx == i) // I do not put them in the queue
-                    output_v.push_back(*elem_iter);
-                else 
-                    tmp.push_back(*elem_iter); 
-                // I store in a tmp vector and send it all later to lock the queue only once
-                elem_iter++;
-            }
             if(worker_idx != i) 
-                q->push_multiple(tmp.begin(), tmp.end());
-            separator_iter++;
+                q->push_multiple(tmp[i].begin(), tmp[i].end());
         }
-        if(worker_idx == nw-1) // the last worker misses the last separator with the provided algorithm
-            output_v.push_back(separators[nw]);
 
 #ifdef TSEQ
         ss.str("");

@@ -17,7 +17,7 @@
 
 \title{SPM Project: BSP}
 \author{Lorenzo Bellomo, 531423}
-\date{AA 2018/2019}
+\date{A.Y. 2018/2019}
 
 \begin{document}
 
@@ -58,17 +58,19 @@ This whole process made of 3 phases composes a \emph{super step}.
 In order to theoretically model the performances of a BSP algorithm some values are going to be defined:
 \begin{itemize}
 	\item $\mathit{nw}$ is the number of workers (BSP processors).
-	\item $k$ is the number of super steps
+	\item $k$ is the number of super steps.
 	\item $w_i$ is the time spent by the \emph{i-th} worker in the compute phase.
-	\item $m_i$ is the number of maximum messages receiver by the \emph{i-th} worker.
+	\item $m_i$ is the number of maximum messages received by the \emph{i-th} worker.
 	\item $c$ is the cost of sending or receiving one message.
 	\item $B$ is the cost of the synchronization step (\emph{barrier}).
-	\item $I$ and $F$ are relatively the initialization and finalization cost. Their value is application specific.
+	\item $I$ and $F$ are relatively the initialization and finalization cost.
 \end{itemize}
 The cost of a super step ($\mathit{SS}$) can be approximated (upper bounded) as follows:
 $$ \mathit{SS}_j = \max_{i=1}^{\mathit{nw}} w_i + \max_{i=1}^{\mathit{nw}} c m_i + B $$
 Which eventually gives:
-$$ \mathit{tot\_cost} = I + \sum_{j=1}^{k} \mathit{SS}_j + F $$
+$$ \mathit{tot\_cost} = I + \sum_{j=1}^{k} \mathit{SS}_j + F $$ 
+Those results will be used again in section \ref{sec:tseq}, where the times collected with the actual program execution will be used to estimate the completion time.
+
 \subsection{Opportunities for parallelism}
 According to the model provided, the opportunities for parallelization reside in the \emph{super step cost}, which ideally should decrease linearly by increasing the number of parallel activities. In particular, it is safe to assume that $w_i = \Theta(n/\mathit{nw}) \, \forall i$, while instead both the communication cost and the barrier cost are pure overhead, which grows with $\mathit{nw}$. \\
 In this particular problem, the parallel design is already provided, but the goal of the implementation is to minimize the overheads, with particular focus on the \emph{communication} one, which can be assumed to be the most costly. \\
@@ -140,7 +142,7 @@ All the cited scripts collect data and dump them in various files, that go in th
 
 \subsection{Collection of Partial Times}
 \label{sec:tseq}
-In table \ref{tab:tseq} some partial times collected are shown. All the times are expressed in microseconds and are the result of an average between multiple runs. All the runs have been executed with $3\,000\,000$ items ($2^{20} < 3M < 2^{21}$) as an input size.\\ 
+In table \ref{tab:tseq} some partial times collected are shown. All the times are expressed in microseconds and are the result of an average between multiple runs. All the runs have been executed with $3\,000\,000$ items ($2^{21} < 3M < 2^{22}$) as an input size.\\ 
 The labels shown are described below:
 \begin{itemize}
 	\item \emph{ss computation}: it is an average of the time spent by a generic super step (average of the three) in computation phase.
@@ -166,6 +168,22 @@ The labels shown are described below:
 	\caption{Collections of partial times (in \SI{}{\milli \second})}
 	\label{tab:tseq}%
 \end{table}%
+Having collected those values, it is now possible to use apply the \emph{performance model} (see section \ref{sec:perfModel}) to the actual partial times. Remember that the times shown in the table are averages, while some maximums are needed. Remember that the set $T_{seq}$ was collected using n = $3\,000\,000$. \\
+By substituting the times computed with \code{tseq.sh} in the performance model proposed, the results are shown in table \ref{tab:perfModel}. (discarding the initialization cost).
+\begin{table}[H]
+	\centering
+	\begin{tabular}{l|*{9}r}
+		\toprule
+			\diagbox{time}{$\mathit{nw}$} 
+		& 1 & 2 & 4 & 8 & 16 & 32 & 64 & 128 & 256 \\
+		\midrule
+		$n=3\,000\,000$ & 927 & 924 & 363 & 208 & 118 & 91 & 139 & 208 & 1480 \\
+		\bottomrule
+	\end{tabular}%
+	\caption{Theoretical times computed according to the performance model for n = $3\,000\,000$ (in \SI{}{\milli \second})}
+	\label{tab:perfModel}%
+\end{table}%
+
 
 \subsection{Benchmark}
 \label{sec:benchmark}
@@ -197,16 +215,6 @@ The program seems to scale well up until nw = 32 (with the exception of nw = 2).
 When nw = 64, the program scales only for bigger input sizes (and by extension it is safe to assume that the same behaviour applies to nw = 128). For nw = 256 instead the overhead is huge. \\
 Some plots related to those data are shown in section \ref{sec:plots}.
 
-
-\subsection{Profiling}
-\label{sec:profile}
-According to \code{gprof}, the most time is spent iterating between elements of a vector. This is also due to the fact that a lot of time is spent in \emph{generating} the input vector, and as the size grows of the input grows this time gets longer and longer. \\
-That said, the most time consuming operations used by the workers, excluding the time spent iterating between elements, which is hard to monitor, are the \emph{queue} related ones.
-Around 2\% of the time is spent either \emph{pushing} or \emph{popping} from queues. \\
-The longest super step is super step 2, which accounts for more than double the time spent in super steps 1 and 3.\\
-The time spent locking and synchronizing around a barrier instead results \emph{negligible}. \\
-In order to execute again this evaluation, use the script \code{profile.sh}.
-
 \subsection{Plots}
 \label{sec:plots}
 In this section some plots related to data generated with the script \code{benchmark.sh} are shown.\\
@@ -223,7 +231,8 @@ In figure \ref{fig:execution} the completion time is shown on the left for an in
 \end{figure}
 
 \subsubsection{Speedup}
-The \emph{speedup} is computed as $s(p) = T_{seq}/T_{par}(p)$. The best sequential time $T_{seq}$ taken as reference is the one obtained using \code{std::sort}.
+The \emph{speedup} is computed as $s(p) = T_{seq}/T_{par}(p)$. The best sequential time $T_{seq}$ taken as reference is the one obtained using \code{std::sort}.\\
+The speedup is shown in figure \ref{fig:speedup}.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\linewidth]{speedup}
@@ -232,7 +241,7 @@ The \emph{speedup} is computed as $s(p) = T_{seq}/T_{par}(p)$. The best sequenti
 \end{figure}
 
 \subsubsection{Scalability}
-The \emph{scalability} is computed as $\mathit{scalab}(p) = T_{par}(1)/T_{par}(p)$
+The \emph{scalability} is computed as $\mathit{scalab}(p) = T_{par}(1)/T_{par}(p)$ and is show in figure \ref{fig:scalab}.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\linewidth]{scalability}
@@ -241,7 +250,7 @@ The \emph{scalability} is computed as $\mathit{scalab}(p) = T_{par}(1)/T_{par}(p
 \end{figure}
 
 \subsubsection{Efficiency}
-The \emph{efficiency} is computed as $\epsilon(p) = T_{seq}/(pT_{par}(p))$
+The \emph{efficiency} is computed as $\epsilon(p) = T_{seq}/(pT_{par}(p))$ and is shown in figure \ref{fig:effic}. Also in this case the $T_{seq}$ taken in consideration is the one from \code{std::sort}.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\linewidth]{efficiency}
@@ -249,7 +258,18 @@ The \emph{efficiency} is computed as $\epsilon(p) = T_{seq}/(pT_{par}(p))$
 	\label{fig:effic}
 \end{figure}
 
+\subsection{Profiling}
+\label{sec:profile}
+According to \code{gprof}, the most time is spent iterating between elements of a vector. This is also due to the fact that a lot of time is spent in \emph{generating} the input vector, and as the size grows of the input grows this time gets longer and longer. \\
+That said, the most time consuming operations used by the workers, excluding the time spent iterating between elements, which is hard to monitor, are the \emph{queue} related ones.
+Around 2\% of the time is spent either \emph{pushing} or \emph{popping} from queues. \\
+The longest super step is super step 2, which accounts for more than double the time spent in super steps 1 and 3.\\
+The time spent locking and synchronizing around a barrier instead results \emph{negligible}. \\
+In order to execute again this evaluation, use the script \code{profile.sh}.
+
 \section{Conclusions}
 \label{sec:conclusion}
+By analysing the collected data and the provided plots, it is possible to notice that the program does not scale perfectly. It has a slow start (which means for a low parallelism degree, the speedup curve is not that good). Then the behaviour improves significantly when approaching the maximum number of physical cores in the machine, only to then drop again. \\
+This is also clear by watching the efficiency graph in figure \ref{fig:effic}, which shows the efficiency drop for nw = 2, then an approximatively steady line approaching nw = 64, and another drop at the end.
 
 \end{document}

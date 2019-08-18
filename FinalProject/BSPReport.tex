@@ -44,7 +44,7 @@ BSP is by nature a parallel bridging model. The main idea is that the process is
 	\item \emph{Communication}: In this phase processors are allowed to send data to the other ones. It is important to notice that phase 1 and 2 (super step and communication) may overlap in case of uneven input workload.
 	\item \emph{Synchronization}: In this phase all the processors synchronize and wait that the communication phase is over for each worker (\emph{barrier}).
 \end{itemize}
-This whole process made of 3 phases composes a \emph{super step}.
+The first two phases (computation and communication) form a \emph{super step}.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.45\linewidth]{bsp}
@@ -59,20 +59,20 @@ In order to theoretically model the performances of a BSP algorithm some values 
 \begin{itemize}
 	\item $\mathit{nw}$ is the number of workers (BSP processors).
 	\item $k$ is the number of super steps.
-	\item $w_i$ is the time spent by the \emph{i-th} worker in the compute phase.
-	\item $m_i$ is the number of maximum messages received by the \emph{i-th} worker.
+	\item $w_{ij}$ is the time spent by the \emph{i-th} worker in the compute phase of the \emph{j-th} super step.
+	\item $m_{ij}$ is the number of maximum messages received by the \emph{i-th} worker. in the \emph{j-th} super step.
 	\item $c$ is the cost of sending or receiving one message.
-	\item $B$ is the cost of the synchronization step (\emph{barrier}).
+	\item $B_j$ is the cost of the synchronization step of the \emph{j-th} super step (\emph{barrier}).
 	\item $I$ and $F$ are relatively the initialization and finalization cost.
 \end{itemize}
 The cost of a super step ($\mathit{SS}$) can be approximated (upper bounded) as follows:
-$$ \mathit{SS}_j = \max_{i=1}^{\mathit{nw}} w_i + \max_{i=1}^{\mathit{nw}} c m_i + B $$
+$$ \mathit{SS}_j = B_j+ \max_{i=1}^{\mathit{nw}}(w_{ij} + c m_{ij})$$
 Which eventually gives:
-$$ \mathit{tot\_cost} = I + \sum_{j=1}^{k} \mathit{SS}_j + F $$ 
+$$ \mathit{tot\_cost} = I +F+ \sum_{j=1}^{k} \mathit{SS}_j = I + F +\sum_{j=1}^{k} (B_j+ \max_{i=1}^{\mathit{nw}}(w_{ij} + c m_{ij})) $$ 
 Those results will be used again in section \ref{sec:tseq}, where the times collected with the actual program execution will be used to estimate the completion time.
 
 \subsection{Opportunities for parallelism}
-According to the model provided, the opportunities for parallelization reside in the \emph{super step cost}, which ideally should decrease linearly by increasing the number of parallel activities. In particular, it is safe to assume that $w_i = \Theta(n/\mathit{nw}) \, \forall i$, while instead both the communication cost and the barrier cost are pure overhead, which grows with $\mathit{nw}$. \\
+According to the model provided, the opportunities for parallelization reside in the \emph{super step cost}, which ideally should decrease linearly by increasing the number of parallel activities. Of course, every suer step does a different job, but the goal is to have the time of a computation phase decrease like that: $w_i = \Theta(n/\mathit{nw}) \, \forall i$, while instead both the communication cost and the barrier cost are pure overhead, which grows with $\mathit{nw}$. \\
 In this particular problem, the parallel design is already provided, but the goal of the implementation is to minimize the overheads, with particular focus on the \emph{communication} one, which can be assumed to be the most costly. \\
 
 For what regards the user provided business logic code, which regards both the computation phase and the communication one, the scalability of the provided \emph{BSP} depends on the goodness of the business logic code.
@@ -270,6 +270,8 @@ In order to execute again this evaluation, use the script \code{profile.sh}.
 \section{Conclusions}
 \label{sec:conclusion}
 By analysing the collected data and the provided plots, it is possible to notice that the program does not scale perfectly. It has a slow start (which means for a low parallelism degree, the speedup curve is not that good). Then the behaviour improves significantly when approaching the maximum number of physical cores in the machine, only to then drop again. \\
-This is also clear by watching the efficiency graph in figure \ref{fig:effic}, which shows the efficiency drop for nw = 2, then an approximatively steady line approaching nw = 64, and another drop at the end.
+This is also clear by watching the efficiency graph in figure \ref{fig:effic}, which shows the efficiency drop for nw = 2, then an approximatively steady line approaching nw = 64, and another drop at the end. \\
+
+Another thing worth noting is that table \ref{tab:perfModel}, which was built using input size = $3\,000\,000$, goes along the line of the actual values extracted during the benchmark phase, and stored in table \ref{tab:benchmark}. The values computed sit between the ones found with $n=2^{21}$ and $ n=2^{22}$.
 
 \end{document}
